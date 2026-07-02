@@ -2,12 +2,11 @@ import { useState, useEffect } from "react";
 import { Shell } from "../components/Shell";
 import { BottomNav } from "../components/BottomNav";
 import { EmptyCard } from "../components/EmptyCard";
-import { USER } from "../data/mockData";
 import { safeRate, rateProps } from "../lib/reliabilityUtils";
 import { gf } from "../lib/currency";
 import { fetchMyHistory, fetchCrossedPaths } from "../lib/social";
 
-export function ProfileScreen({ nav, user = USER, balance = USER.goldFlakes, onSignOut }) {
+export function ProfileScreen({ nav, user, balance, onSignOut }) {
   const [tab, setTab] = useState("history");
 
   const [history,        setHistory]        = useState([]);

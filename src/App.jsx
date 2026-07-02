@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "./hooks/useRouter";
-import { USER } from "./data/mockData";
 import { GLOBAL_STYLES } from "./styles/globalStyles";
 import { HomeScreen } from "./screens/HomeScreen";
 import { EventScreen } from "./screens/EventScreen";
@@ -23,7 +22,7 @@ export default function App() {
   const [loading, setLoading]     = useState(isSupabaseConfigured);
   const [onboarded, setOnboarded] = useState(false);
   const [hasSession, setHasSession] = useState(false);
-  const [account, setAccount]   = useState({ id: null, name: USER.name, handle: USER.handle, avatar: USER.avatar });
+  const [account, setAccount]   = useState({ id: null, name: "", handle: "", avatar: "" });
   const [goldFlakes, setGoldFlakes] = useState(0);
 
   // Capture ?event=id from URL; also survives OAuth redirect via localStorage

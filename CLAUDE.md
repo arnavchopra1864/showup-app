@@ -22,7 +22,7 @@ Supabase credentials come from env vars (see `.env.example`):
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_ANON_KEY`
 
-`lib/supabase.js` exports `isSupabaseConfigured` (true when both are set). When unset, the app runs in mock mode against `src/data/mockData.js`.
+`lib/supabase.js` exports `isSupabaseConfigured` (true when both are set). When unset, the app runs in mock mode: backend calls in `src/lib/*.js` degrade to no-ops/empty results.
 
 ## Architecture
 
@@ -30,8 +30,6 @@ Supabase credentials come from env vars (see `.env.example`):
 src/
 ├── main.jsx                         # ReactDOM entry; mounts <App/>
 ├── App.jsx                          # Composition root: auth/onboarding gate, events state, router → screens
-├── data/
-│   └── mockData.js                  # Fallback seed constants (USER, etc.) used only in mock mode
 ├── hooks/
 │   └── useRouter.js                 # Stack-based nav: push/pop/replace/resetTo
 ├── lib/
