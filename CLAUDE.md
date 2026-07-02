@@ -4,18 +4,43 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-ShowUp is a mobile-first social accountability app: friends stake money to commit to events, and flakers forfeit their stake to those who showed up. The entry point is `src/App.jsx`, which is a React component intended to be used inside an external React project (Vite, CRA, etc.) that provides React as a dependency — there is no `package.json` in this repo.
+ShowUp is a mobile-first social accountability app: friends stake **Gold Flakes** (the app's virtual currency, ✨) to commit to events, and flakers forfeit their stake to those who showed up. Stakes are denominated in Gold Flakes, not real money — USD only appears as an on-ramp for buying Flakes (see Currency below).
+
+This is a standalone **Vite + React 19 app**. Entry is `index.html` → `src/main.jsx` → `src/App.jsx` (the composition root). State is backed by **Supabase** when configured, with a mock fallback when it isn't.
+
+## Commands
+
+- `npm run dev` — start the Vite dev server
+- `npm run build` — production build to `dist/`
+- `npm run preview` — serve the built app
+- `node checkin_test.mjs` — Playwright-based check-in flow test
+
+## Config
+
+Supabase credentials come from env vars (see `.env.example`):
+
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+
+`lib/supabase.js` exports `isSupabaseConfigured` (true when both are set). When unset, the app runs in mock mode against `src/data/mockData.js`.
 
 ## Architecture
 
 ```
 src/
-├── App.jsx                          # Composition root: holds events state, wires router to screens
+├── main.jsx                         # ReactDOM entry; mounts <App/>
+├── App.jsx                          # Composition root: auth/onboarding gate, events state, router → screens
 ├── data/
-│   └── mockData.js                  # All seed constants (INITIAL_EVENTS, USER, FRIENDS, HISTORY)
+│   └── mockData.js                  # Fallback seed constants (USER, etc.) used only in mock mode
 ├── hooks/
 │   └── useRouter.js                 # Stack-based nav: push/pop/replace/resetTo
 ├── lib/
+│   ├── supabase.js                  # Supabase client + isSupabaseConfigured flag
+│   ├── auth.js                      # Google OAuth, profiles table, grant_welcome_bonus RPC
+│   ├── events.js                    # Event fetch/create/checkin/payout; normalizeEvent() row-shaping
+│   ├── social.js                    # History + reliability stats fetches
+│   ├── flakes.js                    # Gold Flakes constants (USD_TO_FLAKES, WELCOME_BONUS, FLAKE_PACKS)
+│   ├── currency.js                  # gf() formatter + currency naming
 │   ├── payoutMath.js                # calcPayout + PLATFORM_FEE_RATE (10% on forfeited stakes)
 │   └── reliabilityUtils.js          # safeRate / rateProps (showed% → label + color)
 ├── styles/
@@ -25,30 +50,43 @@ src/
 │   ├── Shell.jsx                    # Full-screen layout wrapper; accepts animClass prop
 │   ├── Header.jsx                   # Gradient hero header with optional back button
 │   ├── BottomNav.jsx                # Fixed tab bar (home / +new event / profile)
+│   ├── FlakeShop.jsx                # Gold Flakes purchase UI (FLAKE_PACKS)
 │   ├── EmptyCard.jsx                # Placeholder card for empty states
 │   └── QRCodeSVG.jsx                # Custom SVG QR renderer (no external lib)
-└── screens/
-    ├── HomeScreen/
-    │   ├── index.jsx                # Event feed: tonight / upcoming / past tabs
-    │   └── EventCard.jsx            # Card for a single event; receives nav as prop
-    ├── EventScreen.jsx              # RSVP flow: idle → confirming → paid
-    ├── CreateScreen/
-    │   ├── index.jsx                # 4-step wizard (vibe → details → stakes → send it)
-    │   ├── StepDots.jsx             # Progress indicator; receives step as prop
-    │   └── createScreenConstants.js # STAKE_OPTIONS, TIME_CHIPS, STEPS, CONF_OPTS
-    ├── CheckinScreen.jsx            # Host: rotating QR (120s expiry). Guest: tap-to-scan
-    ├── PayoutScreen.jsx             # Tap-through reveal: flakers → showups → payout → share
-    └── ProfileScreen.jsx            # Reliability %, streak/earnings stats, history, friends
+├── screens/
+│   ├── OnboardingScreen/index.jsx   # Sign-in (Google OAuth) + profile creation (name/handle/avatar)
+│   ├── HomeScreen/
+│   │   ├── index.jsx                # Event feed: tonight / upcoming / past tabs
+│   │   └── EventCard.jsx            # Card for a single event; receives nav as prop
+│   ├── EventScreen.jsx              # RSVP flow: idle → confirming → paid
+│   ├── CreateScreen/
+│   │   ├── index.jsx                # 4-step wizard (vibe → details → stakes → send it)
+│   │   ├── StepDots.jsx             # Progress indicator; receives step as prop
+│   │   └── createScreenConstants.js # STAKE_OPTIONS, TIME_CHIPS, STEPS, CONF_OPTS
+│   ├── CheckinScreen.jsx            # Host: rotating QR (120s expiry). Guest: tap-to-scan
+│   ├── PayoutScreen.jsx             # Tap-through reveal: flakers → showups → payout → share
+│   ├── BuyScreen.jsx                # Buy Gold Flakes (wraps FlakeShop)
+│   ├── HowItWorksScreen.jsx         # Explainer screen
+│   └── ProfileScreen.jsx            # Reliability %, streak/earnings stats, history, friends
+└── ...
+supabase/
+└── migrations/                      # SQL schema — source of truth for the DB (tables, RLS, RPCs)
 ```
 
 ## Key patterns
+
+**Backend (Supabase).** All data access lives in `src/lib/*.js`. Every backend function checks `isSupabaseConfigured` and **gracefully degrades** to a mock/no-op result when Supabase is absent, so the UI runs without a backend. `normalizeEvent()` in `lib/events.js` reshapes raw Supabase rows (with joined `participants` / `profiles`) into the object shape `HomeScreen`/`EventCard` expect. Server-side logic (welcome bonus, check-in, payout, reliability) is implemented as **Postgres RPCs** invoked via `supabase.rpc(...)`.
+
+**Schema lives in migrations.** The database schema, row-level security, and RPCs are defined in `supabase/migrations/*.sql` — that directory is the source of truth for the DB, not the JS.
+
+**Auth & deep-link flow.** Sign-in is Google OAuth; a `profiles` row gates onboarding. When a user opens a share link (`?event=<id>`) before signing in, the id is stashed in `localStorage` (`showup_pendingEventId`) so it survives the OAuth redirect, then navigated to once onboarded (see `App.jsx`).
 
 **Router** — `useRouter` returns `{ current, push, pop, replace, resetTo }`. The active screen and its data live in `nav.current = { screen, params }`. Screens receive `nav` as a prop and pass it down to child components that navigate (e.g. `EventCard` gets `nav` to push to checkin/payout).
 
 **Inline styles everywhere.** No CSS modules or Tailwind. Shared CSS lives in `GLOBAL_STYLES` (animations, `.cta-btn`, `.field-input`, `.event-card`). The `pill(color)` helper in `styleHelpers.js` generates status badge styles.
 
-**Payout math** — `calcPayout(stake, totalPaid, totalAttended)` in `lib/payoutMath.js`. The 10% fee is taken from forfeited stakes only; the remainder is split among attendees on top of getting their stake back.
+**Currency (Gold Flakes).** The in-app currency is Gold Flakes (✨). Constants live in `lib/flakes.js` (`USD_TO_FLAKES`, `WELCOME_BONUS`, `FLAKE_PACKS`); formatting via `gf()` in `lib/currency.js`. USD is only used to price Flake packs in the shop — stakes, pots, and payouts are all in Flakes.
 
-**Mock data** — All state is seeded from `src/data/mockData.js`. No backend or persistence. Replacing this file with API calls is the only change needed to wire up a real backend.
+**Payout math** — `calcPayout(stake, totalPaid, totalAttended)` in `lib/payoutMath.js`. The 10% fee is taken from forfeited stakes only; the remainder is split among attendees on top of getting their stake back.
 
 **Color palette**: background `#0D0D0D`, primary purple `#7B2FFF`, accent pink `#FF2D78`, success green `#4ade80`, text `#F2F0FF`.
