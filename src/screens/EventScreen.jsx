@@ -233,7 +233,7 @@ export function EventScreen({ event: initialEvent, eventId, nav, userId, balance
           !isAuthed ? (
             // Public / unauthenticated view
             <div className="fade-up">
-              <div style={{ textAlign: "center", fontSize: 13, color: "#555", marginBottom: 12 }}>stake {gf(stake)} to lock in. show up and get it back — plus a cut of anyone who bails.</div>
+              <div style={{ textAlign: "center", fontSize: 13, color: "#555", marginBottom: 12 }}>stake {gf(stake)} to lock in. show up and get it back, plus a cut from anyone who flakes.</div>
               <button className="cta-btn" onClick={handleSignInToRsvp}>sign in to RSVP</button>
             </div>
           ) : insufficient ? (

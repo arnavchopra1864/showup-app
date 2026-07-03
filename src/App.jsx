@@ -79,6 +79,15 @@ export default function App() {
     if (!isSupabaseConfigured) return;
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session) {
+        // getSession() only reads the cached token — a deleted account (e.g.
+        // removed from another device) leaves a stale local session behind.
+        // Validate server-side and purge it so onboarding starts fresh.
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (!user && error?.status !== 0) {
+          await supabase.auth.signOut({ scope: "local" });
+          setLoading(false);
+          return;
+        }
         setHasSession(true);
         const { profile } = await getProfile();
         if (profile) {
