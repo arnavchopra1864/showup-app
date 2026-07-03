@@ -36,6 +36,21 @@ export default function App() {
     return id ?? null;
   });
 
+  // Capture ?checkout=… from Stripe redirects (Checkout + Connect onboarding)
+  const [checkoutStatus, setCheckoutStatus] = useState(() => {
+    const status = new URLSearchParams(window.location.search).get("checkout");
+    if (status) window.history.replaceState({}, "", window.location.pathname);
+    return status;
+  });
+
+  // Back from Stripe: land the user on the wallet screen with the result
+  useEffect(() => {
+    if (onboarded && checkoutStatus) {
+      setCheckoutStatus(null);
+      nav.push("buy", { checkout: checkoutStatus });
+    }
+  }, [onboarded, checkoutStatus]);
+
   const clearPending = () => {
     localStorage.removeItem(LS_PENDING);
     setPendingEventId(null);
@@ -142,7 +157,7 @@ export default function App() {
           {screen === "checkin"    && <CheckinScreen    event={params.event} eventId={params.eventId} nav={nav} userId={account.id} refreshBalance={refreshBalance} refreshEvents={() => refreshEvents(account.id)} />}
           {screen === "payout"     && <PayoutScreen     event={params.event} eventId={params.eventId} nav={nav} userId={account.id} refreshBalance={refreshBalance} />}
           {screen === "profile"    && <ProfileScreen    nav={nav} user={account} balance={goldFlakes} onSignOut={handleSignOut} />}
-          {screen === "buy"        && <BuyScreen        nav={nav} balance={goldFlakes} addFlakes={addFlakes} />}
+          {screen === "buy"        && <BuyScreen        nav={nav} balance={goldFlakes} addFlakes={addFlakes} refreshBalance={refreshBalance} checkout={params.checkout} />}
           {screen === "howitworks" && <HowItWorksScreen nav={nav} />}
         </>
       )}

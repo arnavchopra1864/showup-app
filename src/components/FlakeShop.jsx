@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FLAKE_PACKS, USD_TO_FLAKES } from "../lib/flakes";
+import { FLAKE_PACKS } from "../lib/flakes";
 
 const GOLD = "#F5C451";
 
@@ -8,12 +8,6 @@ export function FlakeShop({ onPurchase, ctaLabel = "add gold flakes", onSkip, sk
 
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 18, fontSize: 12, color: "#666", fontWeight: 600 }}>
-        <span style={{ color: GOLD, fontWeight: 800 }}>$1 = {USD_TO_FLAKES} ✨</span>
-        <span style={{ color: "#333" }}>·</span>
-        <span>stake them, win them back</span>
-      </div>
-
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 20 }}>
         {FLAKE_PACKS.map(p => {
           const active = sel.usd === p.usd;
@@ -34,10 +28,9 @@ export function FlakeShop({ onPurchase, ctaLabel = "add gold flakes", onSkip, sk
         })}
       </div>
 
-      <button className="cta-btn" style={{ background: `linear-gradient(135deg,${GOLD},#ff9f43)`, color: "#1a1200" }} onClick={() => onPurchase(sel.flakes)}>
+      <button className="cta-btn" style={{ background: `linear-gradient(135deg,${GOLD},#ff9f43)`, color: "#1a1200" }} onClick={() => onPurchase(sel.flakes, sel.usd)}>
         {ctaLabel} for ${sel.usd}
       </button>
-      <div style={{ textAlign: "center", fontSize: 11, color: "#333", marginTop: 10 }}>demo only, no real charge</div>
 
       {onSkip && (
         <button onClick={onSkip} style={{ width: "100%", background: "none", border: "none", color: "#555", fontSize: 13, fontWeight: 700, cursor: "pointer", marginTop: 14, padding: 0 }}>

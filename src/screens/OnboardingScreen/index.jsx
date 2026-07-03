@@ -4,6 +4,7 @@ import { FlakeShop } from "../../components/FlakeShop";
 import { gf } from "../../lib/currency";
 import { WELCOME_BONUS } from "../../lib/flakes";
 import { signInWithGoogle, createProfile } from "../../lib/auth";
+import { createCheckout } from "../../lib/wallet";
 import { supabase, isSupabaseConfigured } from "../../lib/supabase";
 
 const GOLD = "#F5C451";
@@ -175,9 +176,20 @@ export function OnboardingScreen({ onComplete }) {
             <div style={{ fontSize: 44, marginBottom: 16 }}>💰</div>
             <h1 style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: "clamp(38px,11vw,50px)", lineHeight: .92, color: "#F2F0FF", margin: "0 0 12px", letterSpacing: 1 }}>load up your wallet</h1>
             <p style={{ fontSize: 14, color: "#666", margin: "0 0 28px", lineHeight: 1.5 }}>grab some Gold Flakes to stake on plans. {purchased > 0 ? `${gf(purchased)} ready to go.` : "skip for now and we'll spot you some to start."}</p>
+            {error && <div style={{ fontSize: 13, color: "#FF2D78", marginBottom: 16, fontWeight: 600 }}>{error}</div>}
             <FlakeShop
-              ctaLabel="add to wallet"
-              onPurchase={(flakes) => { setPurchased(p => p + flakes); next(); }}
+              ctaLabel={busy ? "opening checkout..." : "add to wallet"}
+              onPurchase={async (flakes, usd) => {
+                if (busy) return;
+                // Mock mode keeps the local flow; with Supabase we hand off to
+                // Stripe Checkout — the user comes back signed in + onboarded,
+                // and the webhook credits the flakes.
+                if (!isSupabaseConfigured) { setPurchased(p => p + flakes); next(); return; }
+                setBusy(true); setError("");
+                const res = await createCheckout(usd);
+                if (!res.ok) { setError(res.error || "couldn't start checkout"); setBusy(false); return; }
+                window.location.assign(res.url);
+              }}
               onSkip={next}
               skipLabel="just give me the free flakes"
             />

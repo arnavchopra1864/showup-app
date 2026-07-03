@@ -12,6 +12,8 @@ export function EventCard({ event, nav }) {
   const status  = liveStatus(event);
   const isToday = status === "checkin";
   const isPast  = status === "past";
+  const hoursSinceStart = event.starts_at ? (Date.now() - new Date(event.starts_at)) / 3600000 : 0;
+  const needsClose = isToday && event.isHost && hoursSinceStart >= 3;
 
   const borderColor = isToday ? "#FF2D78" : isPast ? "#1e2e1e" : "#1e1e2e";
   const bg          = isToday ? "rgba(255,45,120,.04)" : isPast ? "rgba(74,222,128,.02)" : "#111";
@@ -68,11 +70,17 @@ export function EventCard({ event, nav }) {
             )}
           </div>
         </div>
-        {isToday && <span style={pill("#FF2D78")}>check in</span>}
+        {isToday && !needsClose && <span style={pill("#FF2D78")}>check in</span>}
+        {needsClose && <span style={pill("#fbbf24")}>close out</span>}
         {isPast   && <span style={pill("#4ade80")}>paid out</span>}
         {!isToday && !isPast && <span style={pill("#444")}>in</span>}
       </div>
 
+      {needsClose && (
+        <div style={{ marginTop: 10, fontSize: 12, color: "#fbbf24" }}>
+          wrap it up! auto-closes soon
+        </div>
+      )}
     </div>
   );
 }
