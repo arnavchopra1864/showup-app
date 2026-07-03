@@ -34,3 +34,15 @@ export async function createProfile({ name, handle, avatar }) {
   await supabase.rpc("grant_welcome_bonus");
   return { ok: true };
 }
+
+// Server-side self-deletion (see supabase/migrations/0009_delete_account.sql):
+// hosted upcoming events are cancelled with refunds, the caller's flakes are
+// forfeited, and the auth user is removed (cascading to all their rows).
+export async function deleteAccount() {
+  if (!isSupabaseConfigured) return { ok: true, mock: true };
+  const { error } = await supabase.rpc("delete_account");
+  if (error) return { ok: false, error: error.message };
+  // The auth user is already gone; this just clears the local session.
+  await supabase.auth.signOut();
+  return { ok: true };
+}

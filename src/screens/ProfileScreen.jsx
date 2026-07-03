@@ -6,8 +6,22 @@ import { safeRate, rateProps } from "../lib/reliabilityUtils";
 import { gf } from "../lib/currency";
 import { fetchMyHistory, fetchCrossedPaths } from "../lib/social";
 
-export function ProfileScreen({ nav, user, balance, onSignOut }) {
+export function ProfileScreen({ nav, user, balance, onSignOut, onDeleteAccount }) {
   const [tab, setTab] = useState("history");
+
+  const [deleteState, setDeleteState] = useState("idle"); // idle | confirming | deleting
+  const [deleteError, setDeleteError] = useState(null);
+
+  const handleConfirmDelete = async () => {
+    setDeleteState("deleting");
+    setDeleteError(null);
+    const res = await onDeleteAccount();
+    if (res && !res.ok) {
+      setDeleteError(res.error || "couldn't delete your account — try again");
+      setDeleteState("confirming");
+    }
+    // on success App unmounts this screen
+  };
 
   const [history,        setHistory]        = useState([]);
   const [people,         setPeople]         = useState([]);
@@ -52,7 +66,7 @@ export function ProfileScreen({ nav, user, balance, onSignOut }) {
         </div>
       </div>
 
-      <div style={{ padding: "20px 20px 100px" }}>
+      <div style={{ padding: "20px 20px 140px" }}>
         {/* Reliability card */}
         {isNewUser ? (
           <div style={{ background: "linear-gradient(135deg,#12082a,#1a0a1e)", border: "1.5px solid rgba(123,47,255,.2)", borderRadius: 18, padding: "24px 22px", marginBottom: 16, textAlign: "center" }}>
@@ -160,12 +174,37 @@ export function ProfileScreen({ nav, user, balance, onSignOut }) {
                 </div>
               )
         )}
-      </div>
 
-      <div style={{ padding: "0 20px 110px", display: "flex", flexDirection: "column", gap: 10 }}>
-        <button onClick={onSignOut} style={{ width: "100%", padding: "13px 16px", borderRadius: 14, cursor: "pointer", background: "transparent", border: "1.5px solid rgba(255,45,120,.2)", color: "#FF2D78", fontSize: 13, fontWeight: 700, textAlign: "left" }}>
-          sign out
-        </button>
+        {/* Account actions */}
+        <div style={{ marginTop: 28, display: "flex", flexDirection: "column", gap: 10 }}>
+          <button onClick={onSignOut} style={{ width: "100%", padding: "13px 16px", borderRadius: 14, cursor: "pointer", background: "transparent", border: "1.5px solid rgba(255,45,120,.2)", color: "#FF2D78", fontSize: 13, fontWeight: 700, textAlign: "left" }}>
+            sign out
+          </button>
+
+          {deleteState === "idle" ? (
+            <button onClick={() => setDeleteState("confirming")} style={{ width: "100%", padding: "13px 16px", borderRadius: 14, cursor: "pointer", background: "transparent", border: "1.5px solid #1e1e1e", color: "#555", fontSize: 13, fontWeight: 700, textAlign: "left" }}>
+              delete account
+            </button>
+          ) : (
+            <div style={{ border: "1.5px solid rgba(255,45,120,.35)", background: "rgba(255,45,120,.05)", borderRadius: 14, padding: "16px" }}>
+              <div style={{ fontSize: 14, fontWeight: 800, color: "#FF2D78", marginBottom: 6 }}>delete your account?</div>
+              <div style={{ fontSize: 12, color: "#888", lineHeight: 1.55, marginBottom: 12 }}>
+                your {gf(balance)} are forfeited — no refund, no cash out. your history disappears, and any events you're hosting get cancelled (your friends get their stakes back). this can't be undone.
+              </div>
+              {deleteError && (
+                <div style={{ fontSize: 11, color: "#FF2D78", marginBottom: 10 }}>{deleteError}</div>
+              )}
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={handleConfirmDelete} disabled={deleteState === "deleting"} style={{ flex: 1, padding: "11px 14px", borderRadius: 12, cursor: deleteState === "deleting" ? "default" : "pointer", background: "rgba(255,45,120,.15)", border: "1.5px solid rgba(255,45,120,.5)", color: "#FF2D78", fontSize: 12, fontWeight: 800, opacity: deleteState === "deleting" ? .6 : 1 }}>
+                  {deleteState === "deleting" ? "deleting…" : "delete forever"}
+                </button>
+                <button onClick={() => { setDeleteState("idle"); setDeleteError(null); }} disabled={deleteState === "deleting"} style={{ flex: 1, padding: "11px 14px", borderRadius: 12, cursor: "pointer", background: "transparent", border: "1.5px solid #2a2a2a", color: "#888", fontSize: 12, fontWeight: 800 }}>
+                  keep it
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       <BottomNav

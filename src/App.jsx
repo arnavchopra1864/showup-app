@@ -10,7 +10,7 @@ import { ProfileScreen } from "./screens/ProfileScreen";
 import { BuyScreen } from "./screens/BuyScreen";
 import { OnboardingScreen } from "./screens/OnboardingScreen";
 import { HowItWorksScreen } from "./screens/HowItWorksScreen";
-import { getProfile } from "./lib/auth";
+import { getProfile, deleteAccount } from "./lib/auth";
 import { fetchWalletBalance, fetchMyEvents } from "./lib/events";
 import { supabase, isSupabaseConfigured } from "./lib/supabase";
 
@@ -102,6 +102,18 @@ export default function App() {
     nav.resetTo("home");
   };
 
+  const handleDeleteAccount = async () => {
+    const res = await deleteAccount();
+    if (!res.ok) return res;
+    setAccount({ id: null, name: "", handle: "", avatar: "" });
+    setGoldFlakes(0);
+    setEvents([]);
+    setHasSession(false);
+    setOnboarded(false);
+    nav.resetTo("home");
+    return res;
+  };
+
   const handleOnboarded = async ({ name, handle, avatar, purchased }) => {
     let userId = null;
     if (isSupabaseConfigured) {
@@ -156,7 +168,7 @@ export default function App() {
           {screen === "create"     && <CreateScreen     nav={nav} onEventCreated={handleEventCreated} balance={goldFlakes} />}
           {screen === "checkin"    && <CheckinScreen    event={params.event} eventId={params.eventId} nav={nav} userId={account.id} refreshBalance={refreshBalance} refreshEvents={() => refreshEvents(account.id)} />}
           {screen === "payout"     && <PayoutScreen     event={params.event} eventId={params.eventId} nav={nav} userId={account.id} refreshBalance={refreshBalance} />}
-          {screen === "profile"    && <ProfileScreen    nav={nav} user={account} balance={goldFlakes} onSignOut={handleSignOut} />}
+          {screen === "profile"    && <ProfileScreen    nav={nav} user={account} balance={goldFlakes} onSignOut={handleSignOut} onDeleteAccount={handleDeleteAccount} />}
           {screen === "buy"        && <BuyScreen        nav={nav} balance={goldFlakes} addFlakes={addFlakes} refreshBalance={refreshBalance} checkout={params.checkout} />}
           {screen === "howitworks" && <HowItWorksScreen nav={nav} />}
         </>
