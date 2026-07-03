@@ -46,6 +46,7 @@ All notable changes to ShowUp are documented here.
   BuyScreen, and handling for `?checkout=payouts-done|payouts-refresh`.
 - End-to-end Stripe test-mode verification (card 4242…).
 - Flake gifting between friends.
+- In-app cosmetic sinks (streak flair, badges, event themes).
 - Pack bonuses on larger flake packs to reduce effective processing fees.
 
 ## [0.1.0] - Pre-launch baseline
