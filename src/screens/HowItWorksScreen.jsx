@@ -2,7 +2,7 @@ import { Shell } from "../components/Shell";
 import { Header } from "../components/Header";
 
 const HOW_IT_WORKS = [
-  { emoji: "✨", title: "flakes are the currency", body: "buy a stack of Gold Flakes once. you put those on the line instead of cash, so it never feels like spending real money." },
+  { emoji: "✨", title: "flakes are the currency", body: "buy a stack of gold flakes. you put those on the line instead of cash." },
   { emoji: "🤝", title: "stake them to lock in", body: "everyone drops flakes into the pot to RSVP. actually show up and you get every one of yours back." },
   { emoji: "🪦", title: "flakers pay the rest", body: "bail and your flakes get split between the people who showed. being reliable pays off." },
 ];

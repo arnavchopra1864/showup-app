@@ -10,7 +10,7 @@ import { supabase, isSupabaseConfigured } from "../../lib/supabase";
 const GOLD = "#F5C451";
 
 const HOW_IT_WORKS = [
-  { emoji: "✨", title: "flakes are the currency", body: "buy a stack of Gold Flakes once. you put those on the line instead of cash, so it never feels like spending real money." },
+  { emoji: "✨", title: "flakes are the currency", body: "buy a stack of gold flakes. you put those on the line instead of cash." },
   { emoji: "🤝", title: "stake them to lock in", body: "everyone drops flakes into the pot to RSVP. actually show up and you get every one of yours back." },
   { emoji: "🪦", title: "flakers pay the rest", body: "bail and your flakes get split between the people who showed. being reliable pays off." },
 ];
@@ -175,7 +175,7 @@ export function OnboardingScreen({ onComplete }) {
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 44, marginBottom: 16 }}>💰</div>
             <h1 style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: "clamp(38px,11vw,50px)", lineHeight: .92, color: "#F2F0FF", margin: "0 0 12px", letterSpacing: 1 }}>load up your wallet</h1>
-            <p style={{ fontSize: 14, color: "#666", margin: "0 0 28px", lineHeight: 1.5 }}>grab some Gold Flakes to stake on plans. {purchased > 0 ? `${gf(purchased)} ready to go.` : "skip for now and we'll spot you some to start."}</p>
+            <p style={{ fontSize: 14, color: "#666", margin: "0 0 28px", lineHeight: 1.5 }}>we'll spot you 100 to start, too</p>
             {error && <div style={{ fontSize: 13, color: "#FF2D78", marginBottom: 16, fontWeight: 600 }}>{error}</div>}
             <FlakeShop
               ctaLabel={busy ? "opening checkout..." : "add to wallet"}
