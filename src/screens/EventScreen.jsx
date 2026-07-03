@@ -162,9 +162,9 @@ export function EventScreen({ event: initialEvent, eventId, nav, userId, balance
       <div style={{ background: "linear-gradient(160deg,#1a0a2e 0%,#0d0d1a 60%,#0D0D0D 100%)", padding: "44px 24px 32px", position: "relative" }}>
         <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 70% 20%,rgba(123,47,255,.18) 0%,transparent 60%)", pointerEvents: "none" }} />
         <div style={{ position: "relative" }}>
-          <button onClick={nav.pop} style={{ background: "none", border: "none", color: "#555", fontSize: 13, fontWeight: 700, cursor: "pointer", marginBottom: 12, padding: 0 }}>← back</button>
+          <button onClick={nav.pop} style={{ display: "block", background: "none", border: "none", color: "#555", fontSize: 13, fontWeight: 700, cursor: "pointer", marginBottom: 16, padding: 0 }}>← back</button>
           {displayDate && (
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(123,47,255,.18)", border: "1px solid rgba(123,47,255,.4)", borderRadius: 20, padding: "4px 12px", fontSize: 11, fontWeight: 700, color: "#b388ff", letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 14 }}>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(123,47,255,.18)", border: "1px solid rgba(123,47,255,.4)", borderRadius: 20, padding: "4px 12px", fontSize: 11, fontWeight: 700, color: "#b388ff", letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 12 }}>
               <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#7B2FFF", display: "inline-block" }} />
               {displayDate}
             </div>
@@ -178,13 +178,10 @@ export function EventScreen({ event: initialEvent, eventId, nav, userId, balance
 
       <div style={{ padding: "0 20px 80px" }}>
         {/* Pot */}
-        <div className="pot-pulse" style={{ marginTop: -1, background: "linear-gradient(135deg,#12082a,#1a0a1e)", border: "1.5px solid rgba(123,47,255,.5)", borderRadius: 20, padding: "26px 24px 20px", textAlign: "center" }}>
+        <div className="pot-pulse" style={{ position: "relative", marginTop: 20, background: "linear-gradient(135deg,#12082a,#1a0a1e)", border: "1.5px solid rgba(123,47,255,.5)", borderRadius: 20, padding: "26px 24px 20px", textAlign: "center" }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: "#555", letterSpacing: 1.8, textTransform: "uppercase", marginBottom: 6 }}>winner's pot</div>
           <div style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 80, lineHeight: 1, background: "linear-gradient(135deg,#a855f7,#FF2D78)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", letterSpacing: 2 }}>{gf(potAmount)}</div>
           <div style={{ fontSize: 13, color: "#555", marginTop: 4 }}>{paidCount} {paidCount === 1 ? "person" : "people"} in</div>
-          <div style={{ marginTop: 16, padding: "12px 16px", background: "rgba(255,255,255,.04)", borderRadius: 12, fontSize: 13 }}>
-            <div style={{ color: "#F2F0FF", fontWeight: 700, marginBottom: 4 }}>🏆 show up = get {gf(stake, { long: true })} back</div>
-          </div>
         </div>
 
         <div style={{ height: 1, background: "linear-gradient(90deg,transparent,#2a2a3a,transparent)", margin: "20px 0" }} />
