@@ -3,7 +3,7 @@ import { Shell } from "../../components/Shell";
 import { Header } from "../../components/Header";
 import { StepDots } from "./StepDots";
 import { gf } from "../../lib/currency";
-import { STAKE_OPTIONS, TIME_CHIPS, STEPS, CONF_OPTS } from "./createScreenConstants";
+import { STAKE_OPTIONS, TIME_CHIPS, STEPS } from "./createScreenConstants";
 import { createEvent } from "../../lib/events";
 
 export function CreateScreen({ nav, onEventCreated, balance = Infinity }) {
@@ -45,7 +45,6 @@ export function CreateScreen({ nav, onEventCreated, balance = Infinity }) {
   const eventLink = createdId
     ? `${window.location.origin}?event=${createdId}`
     : `${window.location.origin}?event=preview`;
-  const confLabels = form.confirmation.map(c => CONF_OPTS.find(o => o.id === c)?.label).filter(Boolean);
 
   const fieldLabel = { fontSize: 12, fontWeight: 800, color: "#888", letterSpacing: .5, marginBottom: 10, textTransform: "uppercase" };
 
@@ -134,43 +133,23 @@ export function CreateScreen({ nav, onEventCreated, balance = Infinity }) {
             </div>
             {form.customTime && <input className="field-input" type="time" value={form.time} onChange={e => set("time", e.target.value)} autoFocus style={{ marginBottom: 28 }} />}
             <div style={fieldLabel}>where at?</div>
-            <input className="field-input" placeholder="Lustre Pearl, someone's backyard..." value={form.location} onChange={e => set("location", e.target.value)} style={{ marginBottom: 28 }} />
-            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", borderRadius: 13, background: "rgba(123,47,255,.1)", border: "1.5px solid #7B2FFF" }}>
-              <span style={{ fontSize: 20 }}>🔲</span>
-              <div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#F2F0FF" }}>QR scan</div>
-                <div style={{ fontSize: 11, color: "#555" }}>host shows a rotating code — guests scan to check in</div>
-              </div>
-            </div>
+            <input className="field-input" placeholder="Lustre Pearl, someone's backyard..." value={form.location} onChange={e => set("location", e.target.value)} />
           </div>
         )}
 
         {step === 2 && (
           <div className="fade-up">
             <div style={fieldLabel}>set the stakes</div>
-            <div style={{ fontSize: 12, color: "#444", marginBottom: 12 }}>everyone chips in Gold Flakes ✨. show up to win them back.</div>
             <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
               {STAKE_OPTIONS.map(amt => (
                 <button key={amt} onClick={() => set("stake", amt)} style={{ flex: 1, padding: "18px 0", borderRadius: 14, cursor: "pointer", fontFamily: "'Bebas Neue',sans-serif", fontSize: 24, letterSpacing: 1, background: form.stake === amt ? "linear-gradient(135deg,#7B2FFF,#FF2D78)" : "#111", color: form.stake === amt ? "#fff" : "#333", border: form.stake === amt ? "none" : "1.5px solid #1e1e1e", transition: "all .15s" }}>{gf(amt)}</button>
               ))}
             </div>
-            <div style={{ padding: "12px 16px", borderRadius: 12, background: "rgba(255,255,255,.03)", border: "1px solid #1e1e1e", fontSize: 12, color: "#555", marginBottom: 28 }}>
+            <div style={{ padding: "12px 16px", borderRadius: 12, background: "rgba(255,255,255,.03)", border: "1px solid #1e1e1e", fontSize: 12, color: "#555" }}>
               {form.stake === 20  && "😌 casual. flakers won't even flinch."}
               {form.stake === 50  && "🎯 the sweet spot. stings just enough."}
               {form.stake === 100 && "😤 you're serious. flakers will hear about this."}
               {form.stake === 200 && "💀 high stakes. may cause group chat drama."}
-            </div>
-            <div style={fieldLabel}>where does the pot go?</div>
-            <div style={{ display: "flex", gap: 10 }}>
-              {[
-                { id: "split", label: "Split among showups 💸", desc: "flakers fund the loyal" },
-                { id: "round", label: "Buy a round 🍻",         desc: "pool goes toward the tab" },
-              ].map(opt => (
-                <div key={opt.id} style={{ flex: 1, padding: "14px 12px", borderRadius: 14, background: "#111", border: "1.5px solid #1e1e1e", cursor: "pointer", textAlign: "center" }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: "#888", marginBottom: 4 }}>{opt.label}</div>
-                  <div style={{ fontSize: 10, color: "#333" }}>{opt.desc}</div>
-                </div>
-              ))}
             </div>
           </div>
         )}
@@ -189,7 +168,6 @@ export function CreateScreen({ nav, onEventCreated, balance = Infinity }) {
                 form.date && { icon: "📅", label: "when",  value: [form.date, form.time].filter(Boolean).join(" · ") },
                 form.location && { icon: "📍", label: "where", value: form.location },
                 { icon: "💸", label: "stake",  value: `${gf(form.stake)} per person` },
-                confLabels.length > 0 && { icon: "✅", label: "proof",  value: confLabels.join(" + ") },
               ].filter(Boolean).map((row, i, arr) => (
                 <div key={i} style={{ display: "flex", alignItems: "center", gap: 14, padding: "13px 16px", borderBottom: i < arr.length - 1 ? "1px solid #1a1a1a" : "none" }}>
                   <span style={{ width: 22, textAlign: "center", fontSize: 16 }}>{row.icon}</span>
