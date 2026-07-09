@@ -64,7 +64,10 @@ export function OnboardingScreen({ onComplete }) {
   const handleGoogle = async () => {
     setBusy(true); setError("");
     const res = await signInWithGoogle();
-    if (!res.ok) { setError(res.error || "couldn't open Google sign-in"); setBusy(false); }
+    if (!res.ok) { setError(res.error || "couldn't open Google sign-in"); setBusy(false); return; }
+    // Mock mode (no Supabase) has no OAuth redirect — advance straight to
+    // profile so the app is usable/demoable without a backend.
+    if (res.mock) { setBusy(false); setStep(PROFILE); return; }
     // on success the browser navigates away — no need to setBusy(false)
   };
 

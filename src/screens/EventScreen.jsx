@@ -6,7 +6,7 @@ import { safeRate, rateProps } from "../lib/reliabilityUtils";
 import { fetchEvent, rsvpEvent, withdrawEvent, cancelEvent } from "../lib/events";
 import { signInWithGoogle } from "../lib/auth";
 
-export function EventScreen({ event: initialEvent, eventId, nav, userId, balance = Infinity, spendFlakes, refreshBalance, refreshEvents }) {
+export function EventScreen({ event: initialEvent, eventId, nav, userId, balance = Infinity, spendFlakes, refreshBalance, refreshEvents, notice }) {
   const isReal = !!eventId;
 
   const [event, setEvent]               = useState(initialEvent ?? null);
@@ -177,6 +177,14 @@ export function EventScreen({ event: initialEvent, eventId, nav, userId, balance
       </div>
 
       <div style={{ padding: "0 20px 80px" }}>
+        {/* Scanned the check-in QR without being in the event yet */}
+        {notice && (
+          <div className="fade-up" style={{ marginTop: 20, display: "flex", alignItems: "center", gap: 10, background: "rgba(255,45,120,.1)", border: "1px solid rgba(255,45,120,.35)", borderRadius: 14, padding: "13px 15px" }}>
+            <span style={{ fontSize: 18, lineHeight: 1 }}>📷</span>
+            <span style={{ fontSize: 13, color: "#ff6b9d", fontWeight: 600, lineHeight: 1.4 }}>{notice}</span>
+          </div>
+        )}
+
         {/* Pot */}
         <div className="pot-pulse" style={{ position: "relative", marginTop: 20, background: "linear-gradient(135deg,#12082a,#1a0a1e)", border: "1.5px solid rgba(123,47,255,.5)", borderRadius: 20, padding: "26px 24px 20px", textAlign: "center" }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: "#555", letterSpacing: 1.8, textTransform: "uppercase", marginBottom: 6 }}>winner's pot</div>

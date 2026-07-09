@@ -171,12 +171,64 @@ export async function refreshCheckinToken(eventId) {
 }
 
 export async function checkinWithToken(eventId, token) {
-  if (!isSupabaseConfigured) return { ok: true, already: false };
+  if (!isSupabaseConfigured) {
+    // Mock/demo mode has no backend, so mirror the RPC's failure messages for
+    // a few sentinel tokens (used by the demo + checkin_test.mjs to exercise
+    // each branch of runCheckin/routeCheckin). Anything else "succeeds".
+    const t = (token || "").toUpperCase();
+    if (t === "NOTIN")   return { ok: false, error: "you're not in this event" };
+    if (t === "EXPIRED") return { ok: false, error: "code expired — ask the host to refresh" };
+    if (t === "BADCODE") return { ok: false, error: "check-in is closed" };
+    return { ok: true, already: false };
+  }
   try {
     const { data, error } = await supabase.rpc("checkin_with_token", { p_event_id: eventId, p_token: token });
     return error ? { ok: false, error: error.message } : { ok: true, already: data?.already ?? false };
   } catch (e) {
     return { ok: false, error: e.message || "network error" };
+  }
+}
+
+// Bucket a checkin_with_token failure into a UI category. Matched by substring
+// (not equality) since PostgREST wraps the raw RPC exception text.
+// RPC messages (supabase/migrations/0004_checkin_payout.sql):
+//   "you're not in this event"            → not-participant (needs to rsvp)
+//   "code expired — ask the host…"        → expired
+//   "no active check-in session"          → expired (token not generated yet)
+//   "wrong code"                          → expired (stale/rotated token)
+//   "check-in is closed" / "cannot check  → other  (event over / bad status)
+//    in — status: …" / network errors
+export function classifyCheckinError(error) {
+  const m = (error || "").toLowerCase();
+  if (m.includes("not in this event")) return "not-participant";
+  if (m.includes("expired") || m.includes("no active check-in session") || m.includes("wrong code")) return "expired";
+  return "other";
+}
+
+// Run a QR check-in and return a routed outcome. Shared by App.jsx (deep-link
+// after OAuth) and CheckinScreen's in-app camera scanner so both behave
+// identically. Returns { status: "success" | "not-participant" | "expired" |
+// "other", already?, error? }.
+export async function runCheckin(eventId, token) {
+  const res = await checkinWithToken(eventId, token);
+  if (res.ok) return { status: "success", already: res.already };
+  return { status: classifyCheckinError(res.error), error: res.error };
+}
+
+// Copy shown on the EventScreen when a non-participant scans the check-in QR.
+export const NOT_PARTICIPANT_NUDGE = "you're not in this one yet — rsvp first, then scan again";
+
+// Navigate to the right screen for a runCheckin() outcome. `replace` is used by
+// the in-app scanner (already on the checkin screen) so back doesn't stack.
+export function routeCheckin(nav, eventId, result, { replace = false } = {}) {
+  const go = replace ? nav.replace : nav.push;
+  if (result.status === "not-participant") {
+    go("event", { eventId, notice: NOT_PARTICIPANT_NUDGE });
+  } else if (result.status === "success") {
+    go("checkin", { eventId, checkinResult: "success" });
+  } else {
+    // expired / other — CheckinScreen renders the matching failure card
+    go("checkin", { eventId, checkinResult: result.status });
   }
 }
 

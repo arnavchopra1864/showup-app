@@ -11,7 +11,7 @@ import { BuyScreen } from "./screens/BuyScreen";
 import { OnboardingScreen } from "./screens/OnboardingScreen";
 import { HowItWorksScreen } from "./screens/HowItWorksScreen";
 import { getProfile, deleteAccount } from "./lib/auth";
-import { fetchWalletBalance, fetchMyEvents, checkinWithToken } from "./lib/events";
+import { fetchWalletBalance, fetchMyEvents, runCheckin, routeCheckin } from "./lib/events";
 import { supabase, isSupabaseConfigured } from "./lib/supabase";
 
 const LS_PENDING = "showup_pendingEventId";
@@ -79,14 +79,14 @@ export default function App() {
       return;
     }
     (async () => {
-      const res = await checkinWithToken(eventId, token);
-      if (res.ok) {
+      // Shared with CheckinScreen's in-app scanner: success lands on "you're
+      // in", not-a-participant routes to the event (rsvp first), expired/other
+      // show the matching failure card — never a dead end.
+      const result = await runCheckin(eventId, token);
+      if (result.status === "success") {
         await Promise.allSettled([refreshBalance(), refreshEvents(account.id)]);
-        nav.push("checkin", { eventId, checkinResult: "success" });
-      } else {
-        // Expired/rotated token or not-a-participant — never a dead end.
-        nav.push("checkin", { eventId, checkinResult: res.error || "couldn't check you in" });
       }
+      routeCheckin(nav, eventId, result);
     })();
   }, [onboarded, pendingEventId, pendingCheckin]);
 
@@ -199,7 +199,7 @@ export default function App() {
       ) : (
         <>
           {screen === "home"       && <HomeScreen       events={events} nav={nav} user={account} balance={goldFlakes} />}
-          {screen === "event"      && <EventScreen      event={params.event} eventId={params.eventId} nav={nav} userId={account.id} balance={goldFlakes} spendFlakes={spendFlakes} refreshBalance={refreshBalance} refreshEvents={() => refreshEvents(account.id)} />}
+          {screen === "event"      && <EventScreen      event={params.event} eventId={params.eventId} nav={nav} userId={account.id} balance={goldFlakes} spendFlakes={spendFlakes} refreshBalance={refreshBalance} refreshEvents={() => refreshEvents(account.id)} notice={params.notice} />}
           {screen === "create"     && <CreateScreen     nav={nav} onEventCreated={handleEventCreated} balance={goldFlakes} />}
           {screen === "checkin"    && <CheckinScreen    event={params.event} eventId={params.eventId} nav={nav} userId={account.id} refreshBalance={refreshBalance} refreshEvents={() => refreshEvents(account.id)} checkinResult={params.checkinResult} />}
           {screen === "payout"     && <PayoutScreen     event={params.event} eventId={params.eventId} nav={nav} userId={account.id} refreshBalance={refreshBalance} />}

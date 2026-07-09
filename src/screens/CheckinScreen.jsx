@@ -1,16 +1,21 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { Shell } from "../components/Shell";
 import { EmptyCard } from "../components/EmptyCard";
 import { QRCodeSVG } from "../components/QRCodeSVG";
 import { gf } from "../lib/currency";
-import { refreshCheckinToken, checkinWithToken, closeAndPayout, fetchEvent } from "../lib/events";
+import { refreshCheckinToken, checkinWithToken, closeAndPayout, fetchEvent, runCheckin, routeCheckin } from "../lib/events";
+
+// Camera + jsqr only load when the guest taps "open camera".
+const QrScanner = lazy(() => import("../components/QrScanner"));
 
 export function CheckinScreen({ event, eventId, nav, userId, refreshBalance, refreshEvents, checkinResult }) {
   const isReal  = !!eventId;
   const isHost  = event?.isHost ?? false;
-  // Guest arrives here after a deep-link check-in (App.jsx runs it): "success"
-  // or a friendly error string. Everything else means "show the scan hint".
-  const checkinErr = checkinResult && checkinResult !== "success" ? checkinResult : "";
+  // Guest arrives here after a check-in attempt (deep-link in App.jsx, or the
+  // in-app scanner below): "success", "expired", or "other". routeCheckin sets
+  // these; anything else falls back to "other". Empty → show the scan hint.
+  const errKind = (!checkinResult || checkinResult === "success")
+    ? "" : (checkinResult === "expired" ? "expired" : "other");
 
   // Host state
   const [token,     setToken]     = useState(null);
@@ -24,9 +29,29 @@ export function CheckinScreen({ event, eventId, nav, userId, refreshBalance, ref
   const attemptRef = useRef(0);
   const prevShowed = useRef(0);
 
-  // Guest state — check-in itself happens via QR deep-link (see App.jsx);
-  // this screen only reflects the outcome.
+  // Guest state — check-in happens either via QR deep-link (App.jsx) or the
+  // in-app camera scanner below; this screen reflects the outcome.
   const [checkinDone, setCheckinDone] = useState(checkinResult === "success");
+  const [scannerOpen, setScannerOpen] = useState(false);
+
+  // A frame decoded by the in-app scanner. Parse the deep-link and, if it's a
+  // ShowUp check-in QR, run the exact same path as the OAuth deep-link (honour
+  // the scanned event even if it differs from this screen's). Return a hint
+  // string for anything else so the scanner keeps looking.
+  const handleDecode = (raw) => {
+    let url;
+    try { url = new URL(raw, window.location.origin); } catch { return "that's not a showup code"; }
+    const evId = url.searchParams.get("event");
+    const tok  = url.searchParams.get("checkin");
+    if (!evId || !tok) return "that's not a showup code";
+    setScannerOpen(false);
+    (async () => {
+      const result = await runCheckin(evId, tok);
+      if (result.status === "success") await Promise.allSettled([refreshBalance?.(), refreshEvents?.()]);
+      routeCheckin(nav, evId, result, { replace: true });
+    })();
+    return undefined; // consumed
+  };
 
   // Mock guest state (non-real path)
   const [mockChecked, setMockChecked]   = useState((event?.guests ?? []).filter(g => g.checked));
@@ -285,24 +310,52 @@ export function CheckinScreen({ event, eventId, nav, userId, refreshBalance, ref
                 <div style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 52, color: "#4ade80", lineHeight: .92, marginBottom: 10 }}>you're in</div>
                 <div style={{ fontSize: 13, color: "#555" }}>checked in · sit tight and pray someone bails 😈</div>
               </div>
-            ) : checkinErr ? (
-              <div className="pop-in" style={{ background: "linear-gradient(135deg,#12082a,#1a0a1e)", border: "1.5px solid rgba(255,45,120,.4)", borderRadius: 20, padding: "36px 24px", textAlign: "center" }}>
-                <div style={{ fontSize: 48, marginBottom: 14 }}>⌛</div>
-                <div style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 36, color: "#FF2D78", lineHeight: .95, marginBottom: 10 }}>code expired</div>
-                <div style={{ fontSize: 13, color: "#555", marginBottom: 24, lineHeight: 1.5 }}>ask the host to show the qr again and scan it once more</div>
-                <button
-                  onClick={() => nav.replace("event", { eventId })}
-                  style={{ padding: "12px 26px", borderRadius: 14, background: "rgba(123,47,255,.12)", border: "1.5px solid rgba(123,47,255,.4)", color: "#b388ff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}
-                >
-                  back to the event
-                </button>
-              </div>
             ) : (
-              <div style={{ background: "linear-gradient(135deg,#12082a,#1a0a1e)", border: "1.5px solid rgba(123,47,255,.4)", borderRadius: 20, padding: "40px 28px", textAlign: "center" }}>
-                <div style={{ fontSize: 46, marginBottom: 16 }}>📷</div>
-                <div style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 30, color: "#F2F0FF", marginBottom: 10 }}>scan to check in</div>
-                <div style={{ fontSize: 13, color: "#555", lineHeight: 1.5 }}>find the host and point your camera at the qr code on their screen — it'll check you in automatically</div>
-              </div>
+              <>
+                {/* Open-camera button sits where the host's QR card would — the
+                    guest scans the host's screen right here, no camera app. */}
+                {scannerOpen ? (
+                  <Suspense fallback={<div style={{ borderRadius: 20, aspectRatio: "1", background: "#0a0a0f", border: "1.5px solid #7B2FFF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, color: "#555", fontWeight: 700, marginBottom: 20 }}>loading camera…</div>}>
+                    <QrScanner onDecode={handleDecode} onClose={() => setScannerOpen(false)} />
+                  </Suspense>
+                ) : (
+                  <button className="cta-btn" style={{ background: "linear-gradient(135deg,#7B2FFF,#FF2D78)", marginBottom: 20 }} onClick={() => setScannerOpen(true)}>
+                    open camera 📷
+                  </button>
+                )}
+
+                {errKind === "expired" ? (
+                  <div className="pop-in" style={{ background: "linear-gradient(135deg,#12082a,#1a0a1e)", border: "1.5px solid rgba(255,45,120,.4)", borderRadius: 20, padding: "36px 24px", textAlign: "center" }}>
+                    <div style={{ fontSize: 48, marginBottom: 14 }}>⌛</div>
+                    <div style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 36, color: "#FF2D78", lineHeight: .95, marginBottom: 10 }}>code expired</div>
+                    <div style={{ fontSize: 13, color: "#555", marginBottom: 24, lineHeight: 1.5 }}>ask the host to show the qr again and scan it once more</div>
+                    <button
+                      onClick={() => nav.replace("event", { eventId })}
+                      style={{ padding: "12px 26px", borderRadius: 14, background: "rgba(123,47,255,.12)", border: "1.5px solid rgba(123,47,255,.4)", color: "#b388ff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}
+                    >
+                      back to the event
+                    </button>
+                  </div>
+                ) : errKind === "other" ? (
+                  <div className="pop-in" style={{ background: "linear-gradient(135deg,#12082a,#1a0a1e)", border: "1.5px solid rgba(255,45,120,.4)", borderRadius: 20, padding: "36px 24px", textAlign: "center" }}>
+                    <div style={{ fontSize: 48, marginBottom: 14 }}>😵‍💫</div>
+                    <div style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 36, color: "#FF2D78", lineHeight: .95, marginBottom: 10 }}>couldn't check you in</div>
+                    <div style={{ fontSize: 13, color: "#555", marginBottom: 24, lineHeight: 1.5 }}>something went sideways — head back to the event and try again in a sec</div>
+                    <button
+                      onClick={() => nav.replace("event", { eventId })}
+                      style={{ padding: "12px 26px", borderRadius: 14, background: "rgba(123,47,255,.12)", border: "1.5px solid rgba(123,47,255,.4)", color: "#b388ff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}
+                    >
+                      back to the event
+                    </button>
+                  </div>
+                ) : !scannerOpen ? (
+                  <div style={{ background: "linear-gradient(135deg,#12082a,#1a0a1e)", border: "1.5px solid rgba(123,47,255,.4)", borderRadius: 20, padding: "32px 28px", textAlign: "center" }}>
+                    <div style={{ fontSize: 40, marginBottom: 14 }}>👀</div>
+                    <div style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 28, color: "#F2F0FF", marginBottom: 10 }}>scan to check in</div>
+                    <div style={{ fontSize: 13, color: "#555", lineHeight: 1.5 }}>find the host and open the camera above — point it at the qr on their screen and you're in. (your phone's camera app works too.)</div>
+                  </div>
+                ) : null}
+              </>
             )
           ) : (
             /* Mock scan UI */

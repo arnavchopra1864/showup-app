@@ -5,6 +5,22 @@ All notable changes to ShowUp are documented here.
 ## [Unreleased]
 
 ### Added
+- **In-app camera QR scanner for guests.** The guest check-in screen now leads
+  with a prominent "open camera 📷" button (where the host's QR sits) that opens
+  a live in-browser scanner instead of forcing guests out to their phone's
+  camera app. Decoding uses the native `BarcodeDetector` API where available
+  (Android Chrome) and lazily falls back to `jsqr` (new dependency) scanning
+  video frames via canvas elsewhere (iOS Safari has no `BarcodeDetector`). The
+  scanner and jsqr are code-split behind a dynamic `import()` so they only load
+  when the button is tapped (separate ~48 kB-gzip jsqr chunk, kept off the main
+  bundle). On a decode it parses the deep-link and runs the exact same check-in
+  path as an OAuth deep-link (honouring the scanned event even if it differs
+  from the current screen); non-ShowUp codes show a brief "that's not a showup
+  code" and keep scanning. Camera tracks are always stopped on close/unmount,
+  and permission-denied / no-camera states show friendly copy pointing back to
+  the phone camera app. Mock mode keeps the existing tap-to-simulate demo.
+  New `src/components/QrScanner.jsx`; shared `runCheckin`/`routeCheckin` helpers
+  in `lib/events.js` so App.jsx and the scanner drive identical behaviour.
 - **Stripe money-in (built & deployed 2026-07-02/03).** Gold Flake packs are
   bought through Stripe Checkout via Supabase Edge Functions:
   `create-checkout` builds the session (packs validated server-side) and the
@@ -68,6 +84,21 @@ All notable changes to ShowUp are documented here.
   drops the "demo only, no real charge" footer.
 
 ### Fixed
+- **Check-in failures are now differentiated (real-device bug).** A guest who
+  hadn't RSVP'd would scan the QR and get "code expired", which was wrong and
+  confusing. The `checkin_with_token` errors are now bucketed defensively (by
+  substring, since PostgREST wraps the message): "you're not in this event"
+  routes the guest to the EventScreen with a pink nudge ("you're not in this
+  one yet — rsvp first, then scan again") so they can stake and re-scan;
+  genuinely invalid/expired tokens ("code expired", "no active check-in
+  session", "wrong code") keep the "code expired" card; and anything else
+  ("check-in is closed", bad status, network) shows a generic "couldn't check
+  you in" card — all with a "back to the event" escape hatch, never a dead end.
+- **Mock-mode onboarding was a dead end.** Without Supabase, tapping "continue
+  with google" never advanced past the sign-in step (no OAuth callback to
+  listen for), so the app couldn't be used or demoed backend-free. It now
+  advances straight to profile setup in mock mode (no effect on the real
+  Supabase path).
 - **cancel_event double refunds (migration 0008).** Cancelling refunded
   every `stake_hold` row, double-crediting participants who had already
   withdrawn early; it also had no status guard, so cancelling a closed
