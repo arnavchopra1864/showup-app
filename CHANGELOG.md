@@ -46,6 +46,17 @@ All notable changes to ShowUp are documented here.
   app-like feel.
 
 ### Changed
+- **Check-in is now a real scannable QR (replaces the 6-digit code).** The
+  host screen renders an actual QR (via `qrcode.react`) encoding a deep-link
+  `?event=<id>&checkin=<token>`; it re-renders as the token rotates (~100s)
+  and after each scan. The guest side dropped the manual code-entry input —
+  guests just point their camera at the host's screen. `App.jsx` reads the
+  scanned `?checkin=<token>` (stashed in `localStorage` as
+  `showup_pendingCheckin`, surviving the OAuth redirect like `?event`), runs
+  `checkin_with_token` once onboarded, and lands on a clear result: "you're
+  in ✓" on success or a friendly "code expired" card with a path back to the
+  event on failure. Already-signed-in friends check in immediately without
+  bouncing through onboarding. Mock mode keeps a tap-to-simulate demo path.
 - **Direction: friends-only app with cash-in AND cash-out** (decided
   2026-07-02, reversing the earlier closed-loop plan). Flakes are backed by
   real money via Stripe; only the `cash` bucket is withdrawable — the free

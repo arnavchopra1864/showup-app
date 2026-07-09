@@ -51,7 +51,7 @@ src/
 │   ├── BottomNav.jsx                # Fixed tab bar (home / +new event / profile)
 │   ├── FlakeShop.jsx                # Gold Flakes purchase UI (FLAKE_PACKS)
 │   ├── EmptyCard.jsx                # Placeholder card for empty states
-│   └── QRCodeSVG.jsx                # Custom SVG QR renderer (no external lib)
+│   └── QRCodeSVG.jsx                # Thin wrapper around qrcode.react (light-on-dark QR)
 ├── screens/
 │   ├── OnboardingScreen/index.jsx   # Sign-in (Google OAuth) + profile creation (name/handle/avatar)
 │   ├── HomeScreen/
@@ -62,7 +62,7 @@ src/
 │   │   ├── index.jsx                # 4-step wizard (vibe → details → stakes → send it)
 │   │   ├── StepDots.jsx             # Progress indicator; receives step as prop
 │   │   └── createScreenConstants.js # STAKE_OPTIONS, TIME_CHIPS, STEPS, CONF_OPTS
-│   ├── CheckinScreen.jsx            # Host: rotating QR (120s expiry). Guest: tap-to-scan
+│   ├── CheckinScreen.jsx            # Host: rotating scannable QR (encodes ?event&checkin deep-link). Guest: scan-with-camera hint / check-in result
 │   ├── PayoutScreen.jsx             # Tap-through reveal: flakers → showups → payout → share
 │   ├── BuyScreen.jsx                # Buy Gold Flakes (wraps FlakeShop)
 │   ├── HowItWorksScreen.jsx         # Explainer screen
@@ -83,7 +83,7 @@ supabase/
 
 **Schema lives in migrations.** The database schema, row-level security, and RPCs are defined in `supabase/migrations/*.sql` — that directory is the source of truth for the DB, not the JS.
 
-**Auth & deep-link flow.** Sign-in is Google OAuth; a `profiles` row gates onboarding. When a user opens a share link (`?event=<id>`) before signing in, the id is stashed in `localStorage` (`showup_pendingEventId`) so it survives the OAuth redirect, then navigated to once onboarded (see `App.jsx`).
+**Auth & deep-link flow.** Sign-in is Google OAuth; a `profiles` row gates onboarding. When a user opens a share link (`?event=<id>`) before signing in, the id is stashed in `localStorage` (`showup_pendingEventId`) so it survives the OAuth redirect, then navigated to once onboarded (see `App.jsx`). A scanned check-in QR carries `?event=<id>&checkin=<token>`; the token is stashed the same way (`showup_pendingCheckin`) and, once onboarded, `App.jsx` runs `checkinWithToken` and routes to the check-in result (success / friendly expired-code error). Already-signed-in friends flow straight through without re-onboarding.
 
 **Router** — `useRouter` returns `{ current, push, pop, replace, resetTo }`. The active screen and its data live in `nav.current = { screen, params }`. Screens receive `nav` as a prop and pass it down to child components that navigate (e.g. `EventCard` gets `nav` to push to checkin/payout).
 

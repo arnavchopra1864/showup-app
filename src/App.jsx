@@ -11,10 +11,11 @@ import { BuyScreen } from "./screens/BuyScreen";
 import { OnboardingScreen } from "./screens/OnboardingScreen";
 import { HowItWorksScreen } from "./screens/HowItWorksScreen";
 import { getProfile, deleteAccount } from "./lib/auth";
-import { fetchWalletBalance, fetchMyEvents } from "./lib/events";
+import { fetchWalletBalance, fetchMyEvents, checkinWithToken } from "./lib/events";
 import { supabase, isSupabaseConfigured } from "./lib/supabase";
 
 const LS_PENDING = "showup_pendingEventId";
+const LS_PENDING_CHECKIN = "showup_pendingCheckin";
 
 export default function App() {
   const nav = useRouter();
@@ -25,16 +26,22 @@ export default function App() {
   const [account, setAccount]   = useState({ id: null, name: "", handle: "", avatar: "" });
   const [goldFlakes, setGoldFlakes] = useState(0);
 
-  // Capture ?event=id from URL; also survives OAuth redirect via localStorage
+  // Capture ?event=id (+ optional ?checkin=token from a QR scan) from the URL;
+  // both survive the OAuth redirect via localStorage. Read + clear the search
+  // in this one initializer (runs before the checkout initializer below).
   const [pendingEventId, setPendingEventId] = useState(() => {
-    const urlId = new URLSearchParams(window.location.search).get("event");
-    const id    = urlId || localStorage.getItem(LS_PENDING);
-    if (id) {
-      window.history.replaceState({}, "", window.location.pathname);
-      localStorage.setItem(LS_PENDING, id); // persist across OAuth navigation
-    }
+    const params  = new URLSearchParams(window.location.search);
+    const urlId   = params.get("event");
+    const urlTok  = params.get("checkin");
+    const id      = urlId || localStorage.getItem(LS_PENDING);
+    if (id)     localStorage.setItem(LS_PENDING, id); // persist across OAuth navigation
+    if (urlTok) localStorage.setItem(LS_PENDING_CHECKIN, urlTok);
+    if (urlId || urlTok) window.history.replaceState({}, "", window.location.pathname);
     return id ?? null;
   });
+
+  // Check-in token from a scanned QR (?checkin=…), stashed alongside the event id.
+  const [pendingCheckin, setPendingCheckin] = useState(() => localStorage.getItem(LS_PENDING_CHECKIN));
 
   // Capture ?checkout=… from Stripe redirects (Checkout + Connect onboarding)
   const [checkoutStatus, setCheckoutStatus] = useState(() => {
@@ -53,16 +60,35 @@ export default function App() {
 
   const clearPending = () => {
     localStorage.removeItem(LS_PENDING);
+    localStorage.removeItem(LS_PENDING_CHECKIN);
     setPendingEventId(null);
+    setPendingCheckin(null);
   };
 
-  // Once onboarded, navigate to the pending event (if any)
+  // Once onboarded, act on the pending deep-link: if it carried a check-in
+  // token (QR scan), run the check-in and land on a clear result; otherwise
+  // just open the event. A signed-in friend scanning the QR flows straight
+  // through here without bouncing back to onboarding.
   useEffect(() => {
-    if (onboarded && pendingEventId) {
-      clearPending();
-      nav.push("event", { eventId: pendingEventId });
+    if (!onboarded || !pendingEventId) return;
+    const eventId = pendingEventId;
+    const token   = pendingCheckin;
+    clearPending();
+    if (!token) {
+      nav.push("event", { eventId });
+      return;
     }
-  }, [onboarded, pendingEventId]);
+    (async () => {
+      const res = await checkinWithToken(eventId, token);
+      if (res.ok) {
+        await Promise.allSettled([refreshBalance(), refreshEvents(account.id)]);
+        nav.push("checkin", { eventId, checkinResult: "success" });
+      } else {
+        // Expired/rotated token or not-a-participant — never a dead end.
+        nav.push("checkin", { eventId, checkinResult: res.error || "couldn't check you in" });
+      }
+    })();
+  }, [onboarded, pendingEventId, pendingCheckin]);
 
   const refreshBalance = async () => {
     const { total } = await fetchWalletBalance();
@@ -175,7 +201,7 @@ export default function App() {
           {screen === "home"       && <HomeScreen       events={events} nav={nav} user={account} balance={goldFlakes} />}
           {screen === "event"      && <EventScreen      event={params.event} eventId={params.eventId} nav={nav} userId={account.id} balance={goldFlakes} spendFlakes={spendFlakes} refreshBalance={refreshBalance} refreshEvents={() => refreshEvents(account.id)} />}
           {screen === "create"     && <CreateScreen     nav={nav} onEventCreated={handleEventCreated} balance={goldFlakes} />}
-          {screen === "checkin"    && <CheckinScreen    event={params.event} eventId={params.eventId} nav={nav} userId={account.id} refreshBalance={refreshBalance} refreshEvents={() => refreshEvents(account.id)} />}
+          {screen === "checkin"    && <CheckinScreen    event={params.event} eventId={params.eventId} nav={nav} userId={account.id} refreshBalance={refreshBalance} refreshEvents={() => refreshEvents(account.id)} checkinResult={params.checkinResult} />}
           {screen === "payout"     && <PayoutScreen     event={params.event} eventId={params.eventId} nav={nav} userId={account.id} refreshBalance={refreshBalance} />}
           {screen === "profile"    && <ProfileScreen    nav={nav} user={account} balance={goldFlakes} onSignOut={handleSignOut} onDeleteAccount={handleDeleteAccount} />}
           {screen === "buy"        && <BuyScreen        nav={nav} balance={goldFlakes} addFlakes={addFlakes} refreshBalance={refreshBalance} checkout={params.checkout} />}

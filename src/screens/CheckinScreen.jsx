@@ -1,12 +1,16 @@
 import { useState, useEffect, useRef } from "react";
 import { Shell } from "../components/Shell";
 import { EmptyCard } from "../components/EmptyCard";
+import { QRCodeSVG } from "../components/QRCodeSVG";
 import { gf } from "../lib/currency";
 import { refreshCheckinToken, checkinWithToken, closeAndPayout, fetchEvent } from "../lib/events";
 
-export function CheckinScreen({ event, eventId, nav, userId, refreshBalance, refreshEvents }) {
+export function CheckinScreen({ event, eventId, nav, userId, refreshBalance, refreshEvents, checkinResult }) {
   const isReal  = !!eventId;
   const isHost  = event?.isHost ?? false;
+  // Guest arrives here after a deep-link check-in (App.jsx runs it): "success"
+  // or a friendly error string. Everything else means "show the scan hint".
+  const checkinErr = checkinResult && checkinResult !== "success" ? checkinResult : "";
 
   // Host state
   const [token,     setToken]     = useState(null);
@@ -20,11 +24,9 @@ export function CheckinScreen({ event, eventId, nav, userId, refreshBalance, ref
   const attemptRef = useRef(0);
   const prevShowed = useRef(0);
 
-  // Guest state
-  const [code,       setCode]       = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [checkinDone, setCheckinDone] = useState(false);
-  const [inputErr,   setInputErr]   = useState("");
+  // Guest state — check-in itself happens via QR deep-link (see App.jsx);
+  // this screen only reflects the outcome.
+  const [checkinDone, setCheckinDone] = useState(checkinResult === "success");
 
   // Mock guest state (non-real path)
   const [mockChecked, setMockChecked]   = useState((event?.guests ?? []).filter(g => g.checked));
@@ -148,16 +150,6 @@ export function CheckinScreen({ event, eventId, nav, userId, refreshBalance, ref
     nav.replace("payout", { eventId });
   };
 
-  const handleCheckin = async () => {
-    const trimmed = code.trim().toUpperCase();
-    if (!trimmed) return;
-    setSubmitting(true); setInputErr("");
-    const res = await checkinWithToken(eventId, trimmed);
-    setSubmitting(false);
-    if (res.ok) { setCheckinDone(true); }
-    else { setInputErr(res.error || "couldn't check in"); }
-  };
-
   // Mock scan
   const startScan = () => {
     if (scanState !== "idle") return;
@@ -185,7 +177,13 @@ export function CheckinScreen({ event, eventId, nav, userId, refreshBalance, ref
     ? guests.filter(g => g.status === "showed")
     : mockChecked;
   const remaining = displayGuests.length - checkedIn.length;
-  const qrValue   = isReal ? token : mockSeed;
+  // The QR encodes a deep-link the guest's camera opens; App.jsx reads
+  // ?event & ?checkin and runs checkin_with_token on their behalf. Mock mode
+  // uses a demo event id so the code still renders for a no-backend demo.
+  const origin    = window.location.origin;
+  const qrValue   = isReal
+    ? (token ? `${origin}/?event=${eventId}&checkin=${token}` : null)
+    : `${origin}/?event=demo&checkin=${mockSeed}`;
 
   return (
     <Shell>
@@ -206,12 +204,12 @@ export function CheckinScreen({ event, eventId, nav, userId, refreshBalance, ref
       <div style={{ padding: "20px 20px 80px" }}>
         {isHost ? (
           <>
-            {/* Code card */}
+            {/* QR card */}
             <div style={{ background: "linear-gradient(135deg,#12082a,#1a0a1e)", border: "1.5px solid rgba(123,47,255,.4)", borderRadius: 20, padding: "26px 24px 22px", textAlign: "center", marginBottom: 20, position: "relative" }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "#555", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 18 }}>show this to your crew</div>
-              <div style={{ padding: "24px 0", background: "rgba(123,47,255,.07)", borderRadius: 16, boxShadow: "0 0 48px rgba(123,47,255,.2)" }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#555", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 18 }}>have them scan this with their camera</div>
+              <div style={{ padding: "24px 0", background: "rgba(123,47,255,.07)", borderRadius: 16, boxShadow: "0 0 48px rgba(123,47,255,.2)", display: "flex", alignItems: "center", justifyContent: "center", minHeight: 232 }}>
                 {qrValue
-                  ? <div style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 72, letterSpacing: 14, color: "#F2F0FF", lineHeight: 1, userSelect: "text", WebkitUserSelect: "text" }}>{qrValue}</div>
+                  ? <div style={{ background: "#F2F0FF", padding: 16, borderRadius: 16, lineHeight: 0 }}><QRCodeSVG value={qrValue} size={200} /></div>
                   : (isReal && tokenErr)
                     ? <div style={{ padding: "14px 0" }}>
                         <div style={{ fontSize: 13, color: "#FF2D78", fontWeight: 700, marginBottom: 12 }}>{tokenErr}</div>
@@ -287,29 +285,23 @@ export function CheckinScreen({ event, eventId, nav, userId, refreshBalance, ref
                 <div style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 52, color: "#4ade80", lineHeight: .92, marginBottom: 10 }}>you're in</div>
                 <div style={{ fontSize: 13, color: "#555" }}>checked in · sit tight and pray someone bails 😈</div>
               </div>
-            ) : (
-              <div>
-                <div style={{ background: "linear-gradient(135deg,#12082a,#1a0a1e)", border: "1.5px solid rgba(123,47,255,.4)", borderRadius: 20, padding: "28px 24px", textAlign: "center", marginBottom: 16 }}>
-                  <div style={{ fontSize: 32, marginBottom: 12 }}>🔲</div>
-                  <div style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 28, color: "#F2F0FF", marginBottom: 8 }}>enter the code</div>
-                  <div style={{ fontSize: 13, color: "#555", marginBottom: 24 }}>find the host and type the code from their screen</div>
-                  <input
-                    value={code}
-                    onChange={e => { setCode(e.target.value.toUpperCase().slice(0, 6)); setInputErr(""); }}
-                    onKeyDown={e => e.key === "Enter" && handleCheckin()}
-                    placeholder="A3F72B"
-                    maxLength={6}
-                    autoFocus
-                    style={{ width: "100%", textAlign: "center", fontFamily: "'Bebas Neue',sans-serif", fontSize: 48, letterSpacing: 12, background: "#0d0d0d", border: "1.5px solid #2a2a2a", borderRadius: 14, color: "#F2F0FF", padding: "16px 0", boxSizing: "border-box", outline: "none" }}
-                  />
-                  {inputErr && <div style={{ fontSize: 13, color: "#FF2D78", marginTop: 10, fontWeight: 600 }}>{inputErr}</div>}
-                </div>
+            ) : checkinErr ? (
+              <div className="pop-in" style={{ background: "linear-gradient(135deg,#12082a,#1a0a1e)", border: "1.5px solid rgba(255,45,120,.4)", borderRadius: 20, padding: "36px 24px", textAlign: "center" }}>
+                <div style={{ fontSize: 48, marginBottom: 14 }}>⌛</div>
+                <div style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 36, color: "#FF2D78", lineHeight: .95, marginBottom: 10 }}>code expired</div>
+                <div style={{ fontSize: 13, color: "#555", marginBottom: 24, lineHeight: 1.5 }}>ask the host to show the qr again and scan it once more</div>
                 <button
-                  className={`cta-btn${(!code.trim() || submitting) ? " disabled" : ""}`}
-                  onClick={code.trim() && !submitting ? handleCheckin : undefined}
+                  onClick={() => nav.replace("event", { eventId })}
+                  style={{ padding: "12px 26px", borderRadius: 14, background: "rgba(123,47,255,.12)", border: "1.5px solid rgba(123,47,255,.4)", color: "#b388ff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}
                 >
-                  {submitting ? "checking in…" : "check in"}
+                  back to the event
                 </button>
+              </div>
+            ) : (
+              <div style={{ background: "linear-gradient(135deg,#12082a,#1a0a1e)", border: "1.5px solid rgba(123,47,255,.4)", borderRadius: 20, padding: "40px 28px", textAlign: "center" }}>
+                <div style={{ fontSize: 46, marginBottom: 16 }}>📷</div>
+                <div style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 30, color: "#F2F0FF", marginBottom: 10 }}>scan to check in</div>
+                <div style={{ fontSize: 13, color: "#555", lineHeight: 1.5 }}>find the host and point your camera at the qr code on their screen — it'll check you in automatically</div>
               </div>
             )
           ) : (
