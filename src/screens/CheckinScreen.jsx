@@ -10,10 +10,14 @@ export function CheckinScreen({ event, eventId, nav, userId, refreshBalance, ref
 
   // Host state
   const [token,     setToken]     = useState(null);
+  const [tokenErr,  setTokenErr]  = useState("");
   const [guests,    setGuests]    = useState([]);
   const [closing,   setClosing]   = useState(false);
   const [copied,    setCopied]    = useState(false);
   const pollRef    = useRef(null);
+  const rotateRef  = useRef(null);
+  const retryRef   = useRef(null);
+  const attemptRef = useRef(0);
   const prevShowed = useRef(0);
 
   // Guest state
@@ -30,9 +34,31 @@ export function CheckinScreen({ event, eventId, nav, userId, refreshBalance, ref
   const scanRef = useRef(null);
 
   // ── Real host: get initial token + poll participants ──────────────────────
+  // Fetch/rotate the shared check-in code. On failure, surface the error and
+  // auto-retry with capped backoff so the host is never stuck on "generating…".
   const getToken = async () => {
-    const { ok, token: t } = await refreshCheckinToken(eventId);
-    if (ok && t) setToken(t);
+    const { ok, token: t, error } = await refreshCheckinToken(eventId);
+    if (ok && t) {
+      attemptRef.current = 0;
+      clearTimeout(retryRef.current);
+      setToken(t);
+      setTokenErr("");
+      return t;
+    }
+    setTokenErr(error || "couldn't get a code");
+    attemptRef.current += 1;
+    const delay = Math.min(2000 * 2 ** (attemptRef.current - 1), 15000);
+    clearTimeout(retryRef.current);
+    retryRef.current = setTimeout(getToken, delay);
+    return null;
+  };
+
+  // Manual retry from the error card — reset backoff and try immediately.
+  const retryToken = () => {
+    attemptRef.current = 0;
+    clearTimeout(retryRef.current);
+    setTokenErr("");
+    getToken();
   };
 
   const pollParticipants = async () => {
@@ -42,22 +68,29 @@ export function CheckinScreen({ event, eventId, nav, userId, refreshBalance, ref
 
   useEffect(() => {
     if (!isReal || !isHost) return;
+    let cancelled = false;
     const init = async () => {
-      const { ok, token: t } = await refreshCheckinToken(eventId);
-      if (!ok || !t) return;
-      const res = await checkinWithToken(eventId, t);
-      if (res.ok && !res.already) {
-        // Token was consumed checking in the host — get a fresh one for guests
-        const { ok: ok2, token: t2 } = await refreshCheckinToken(eventId);
-        if (ok2 && t2) setToken(t2);
-      } else {
-        setToken(t);
-      }
+      // Show the code as soon as we have one — don't gate it behind the
+      // host self-checkin (which can legitimately fail if the host has no
+      // participant row, e.g. their auto-stake failed for insufficient flakes).
+      const t = await getToken();
+      if (cancelled || !t) return;
+      // Best-effort: check the host in with the shared code. checkin_with_token
+      // validates but does NOT consume the token, so the same code stays valid
+      // for guests — no re-refresh needed, and a failure here must not blank it.
+      await checkinWithToken(eventId, t);
     };
     init();
     pollParticipants();
     pollRef.current = setInterval(pollParticipants, 5000);
-    return () => clearInterval(pollRef.current);
+    // Server tokens expire at ~130s; rotate ahead of that while the screen is open.
+    rotateRef.current = setInterval(getToken, 100000);
+    return () => {
+      cancelled = true;
+      clearInterval(pollRef.current);
+      clearInterval(rotateRef.current);
+      clearTimeout(retryRef.current);
+    };
   }, [isReal, isHost]);
 
   // Refresh token each time a new guest checks in
@@ -179,7 +212,12 @@ export function CheckinScreen({ event, eventId, nav, userId, refreshBalance, ref
               <div style={{ padding: "24px 0", background: "rgba(123,47,255,.07)", borderRadius: 16, boxShadow: "0 0 48px rgba(123,47,255,.2)" }}>
                 {qrValue
                   ? <div style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 72, letterSpacing: 14, color: "#F2F0FF", lineHeight: 1, userSelect: "text", WebkitUserSelect: "text" }}>{qrValue}</div>
-                  : <div style={{ fontSize: 13, color: "#555", fontWeight: 700, padding: "24px 0" }}>generating…</div>
+                  : (isReal && tokenErr)
+                    ? <div style={{ padding: "14px 0" }}>
+                        <div style={{ fontSize: 13, color: "#FF2D78", fontWeight: 700, marginBottom: 12 }}>{tokenErr}</div>
+                        <button onClick={retryToken} style={{ padding: "10px 22px", borderRadius: 12, background: "rgba(123,47,255,.12)", border: "1.5px solid rgba(123,47,255,.4)", color: "#b388ff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>try again</button>
+                      </div>
+                    : <div style={{ fontSize: 13, color: "#555", fontWeight: 700, padding: "24px 0" }}>generating…</div>
                 }
               </div>
               <div style={{ fontSize: 11, color: "#333", marginTop: 14 }}>refreshes after each scan</div>

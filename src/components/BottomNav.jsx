@@ -1,10 +1,20 @@
+import { createPortal } from "react-dom";
+
 const navItem = {
   flex: 1, display: "flex", flexDirection: "column",
   alignItems: "center", gap: 4, cursor: "pointer",
 };
 
 export function BottomNav({ active, onHome, onCreate, onProfile }) {
-  return (
+  // Rendered via a portal straight into <body> so it's never a descendant of
+  // Shell's animated wrapper. Shell's entry animations use `animation-fill-mode:
+  // both`, which keeps a non-none `transform` on that wrapper permanently (even
+  // after the animation finishes) — a transformed ancestor creates a new
+  // containing block for `position: fixed` children, which would otherwise pin
+  // this nav to Shell's scrolling box instead of the viewport, so it'd scroll
+  // away with the page content. Portaling out of that subtree keeps it pinned
+  // to the real viewport at all times, including mid-animation.
+  return createPortal(
     <div style={{
       position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)",
       width: "100%", maxWidth: 420,
@@ -33,6 +43,7 @@ export function BottomNav({ active, onHome, onCreate, onProfile }) {
         <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 1, textTransform: "uppercase", color: active === "profile" ? "#a78bfa" : "#333" }}>profile</div>
         {active === "profile" && <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#7B2FFF" }} />}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
