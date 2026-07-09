@@ -140,8 +140,8 @@ export function CheckinScreen({ event, eventId, nav, userId, refreshBalance, ref
 
   if (!event && !eventId) return (
     <Shell>
-      <div style={{ padding: "44px 24px 28px" }}>
-        <button onClick={nav.pop} style={{ background: "none", border: "none", color: "#555", fontSize: 13, fontWeight: 700, cursor: "pointer", padding: 0 }}>← back</button>
+      <div style={{ padding: "calc(44px + env(safe-area-inset-top, 0px)) 24px 28px" }}>
+        <button onClick={nav.pop} style={{ background: "none", border: "none", color: "#555", fontSize: 13, fontWeight: 700, cursor: "pointer", padding: "10px", margin: "-10px 0 -10px -10px" }}>← back</button>
       </div>
       <div style={{ padding: 24 }}><EmptyCard emoji="🤔" headline="no event found" sub="go back and try again" /></div>
     </Shell>
@@ -156,11 +156,11 @@ export function CheckinScreen({ event, eventId, nav, userId, refreshBalance, ref
 
   return (
     <Shell>
-      <div style={{ background: "linear-gradient(160deg,#1a0a2e 0%,#0d0d1a 55%,#0D0D0D 100%)", padding: "44px 24px 24px", position: "relative", overflow: "hidden" }}>
+      <div style={{ background: "linear-gradient(160deg,#1a0a2e 0%,#0d0d1a 55%,#0D0D0D 100%)", padding: "calc(44px + env(safe-area-inset-top, 0px)) 24px 24px", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 75% 15%,rgba(123,47,255,.2) 0%,transparent 55%)", pointerEvents: "none" }} />
         <div style={{ position: "relative" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
-            <button onClick={nav.pop} style={{ background: "none", border: "none", color: "#555", fontSize: 13, fontWeight: 700, cursor: "pointer", padding: 0 }}>← back</button>
+            <button onClick={nav.pop} style={{ background: "none", border: "none", color: "#555", fontSize: 13, fontWeight: 700, cursor: "pointer", padding: "10px", margin: "-10px 0 -10px -10px" }}>← back</button>
             <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(255,45,120,.12)", border: "1px solid rgba(255,45,120,.25)", borderRadius: 20, padding: "4px 12px", fontSize: 11, fontWeight: 700, color: "#ff6b9d", letterSpacing: 1.2, textTransform: "uppercase" }}>
               <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#FF2D78", display: "inline-block" }} />tonight
             </div>
@@ -178,7 +178,7 @@ export function CheckinScreen({ event, eventId, nav, userId, refreshBalance, ref
               <div style={{ fontSize: 11, fontWeight: 700, color: "#555", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 18 }}>show this to your crew</div>
               <div style={{ padding: "24px 0", background: "rgba(123,47,255,.07)", borderRadius: 16, boxShadow: "0 0 48px rgba(123,47,255,.2)" }}>
                 {qrValue
-                  ? <div style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 72, letterSpacing: 14, color: "#F2F0FF", lineHeight: 1 }}>{qrValue}</div>
+                  ? <div style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 72, letterSpacing: 14, color: "#F2F0FF", lineHeight: 1, userSelect: "text", WebkitUserSelect: "text" }}>{qrValue}</div>
                   : <div style={{ fontSize: 13, color: "#555", fontWeight: 700, padding: "24px 0" }}>generating…</div>
                 }
               </div>

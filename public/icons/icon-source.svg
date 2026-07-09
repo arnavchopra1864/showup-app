@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="sparkleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7B2FFF"/>
+      <stop offset="100%" stop-color="#FF2D78"/>
+    </linearGradient>
+  </defs>
+
+  <!-- background -->
+  <rect x="0" y="0" width="1024" height="1024" fill="#0D0D0D"/>
+
+  <!-- big sparkle: 4-point star, outer R=340, inner r=70, center (512,512) -->
+  <path fill="url(#sparkleGrad)" d="
+    M 852,512
+    L 561.5,462.5
+    L 512,172
+    L 462.5,462.5
+    L 172,512
+    L 462.5,561.5
+    L 512,852
+    L 561.5,561.5
+    Z"/>
+
+  <!-- small accent sparkle, top-right, outer R=70, inner r=15, center (782,266) -->
+  <path fill="url(#sparkleGrad)" d="
+    M 852,266
+    L 797,251
+    L 782,196
+    L 767,251
+    L 712,266
+    L 767,281
+    L 782,336
+    L 797,281
+    Z"/>
+</svg>

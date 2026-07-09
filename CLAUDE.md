@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ShowUp is a mobile-first social accountability app: friends stake **Gold Flakes** (the app's virtual currency, ✨) to commit to events, and flakers forfeit their stake to those who showed up. Stakes are denominated in Gold Flakes, not real money — USD only appears as an on-ramp for buying Flakes (see Currency below).
 
-This is a standalone **Vite + React 19 app**. Entry is `index.html` → `src/main.jsx` → `src/App.jsx` (the composition root). State is backed by **Supabase** when configured, with a mock fallback when it isn't.
+This is a standalone **Vite + React 19 app**, installable as a **PWA** (`vite-plugin-pwa`, autoUpdate service worker) for a home-screen/mobile-app feel. Entry is `index.html` → `src/main.jsx` → `src/App.jsx` (the composition root). State is backed by **Supabase** when configured, with a mock fallback when it isn't.
 
 ## Commands
 
@@ -68,6 +68,9 @@ src/
 │   ├── HowItWorksScreen.jsx         # Explainer screen
 │   └── ProfileScreen.jsx            # Reliability %, streak/earnings stats, history, friends
 └── ...
+public/
+├── favicon.png, apple-touch-icon.png # App icon (purple→pink sparkle mark)
+└── icons/                           # PWA manifest icons (192/512/maskable), referenced by vite.config.js
 supabase/
 ├── migrations/                      # SQL schema — source of truth for the DB (tables, RLS, RPCs)
 └── functions/                       # Deno edge functions (Stripe): create-checkout, stripe-webhook,
@@ -88,7 +91,7 @@ supabase/
 
 **Currency (Gold Flakes).** The in-app currency is Gold Flakes (✨). Constants live in `lib/flakes.js` (`USD_TO_FLAKES`, `WELCOME_BONUS`, `FLAKE_PACKS`); formatting via `gf()` in `lib/currency.js`. USD prices Flake packs and cash-outs — stakes, pots, and payouts are all in Flakes. Only the `cash` ledger bucket is withdrawable; `promo` (welcome bonus) is stake-only. This is a **friends-only app**, not intended for public distribution.
 
-**Payments (Stripe).** All money movement goes through the edge functions in `supabase/functions/` — the client never writes money rows. Money-in: `create-checkout` builds a Stripe Checkout Session (packs validated server-side); `stripe-webhook` (deployed with `--no-verify-jwt`) verifies the signature and idempotently inserts `payments` + `purchase` ledger rows. Money-out: `connect-onboard` creates a Stripe Connect Express account (stored in `profiles.stripe_account_id`) and returns an onboarding link; `cash-out` debits the ledger then sends a Stripe transfer. Stripe redirects back with `?checkout=success|cancel|payouts-done|payouts-refresh`, captured in `App.jsx` and routed to BuyScreen. Function secrets: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `APP_URL` (via `supabase secrets set`).
+**Payments (Stripe).** All money movement goes through the edge functions in `supabase/functions/` — the client never writes money rows. Money-in (live, wired into BuyScreen): `create-checkout` builds a Stripe Checkout Session (packs validated server-side); `stripe-webhook` (deployed with `--no-verify-jwt`) verifies the signature and idempotently inserts `payments` + `purchase` ledger rows. Money-out (backend deployed, no UI yet — cash-out is deferred to a future release): `connect-onboard` creates a Stripe Connect Express account (stored in `profiles.stripe_account_id`) and returns an onboarding link; `cash-out` debits the ledger then sends a Stripe transfer. Client wrappers for both exist in `lib/wallet.js`, but nothing currently calls the cash-out ones. Stripe redirects back with `?checkout=success|cancel|payouts-done|payouts-refresh`, captured in `App.jsx` and routed to BuyScreen. Function secrets: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `APP_URL` (via `supabase secrets set`).
 
 **Payout math** — `calcPayout(stake, totalPaid, totalAttended)` in `lib/payoutMath.js`. The 10% fee is taken from forfeited stakes only; the remainder is split among attendees on top of getting their stake back.
 

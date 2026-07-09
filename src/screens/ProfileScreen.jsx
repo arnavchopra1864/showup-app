@@ -48,7 +48,7 @@ export function ProfileScreen({ nav, user, balance, onSignOut, onDeleteAccount }
 
   return (
     <Shell animClass="slide-in-right">
-      <div style={{ background: "linear-gradient(160deg,#1a0a2e 0%,#0d0d1a 55%,#0D0D0D 100%)", padding: "48px 24px 32px", position: "relative", overflow: "hidden" }}>
+      <div style={{ background: "linear-gradient(160deg,#1a0a2e 0%,#0d0d1a 55%,#0D0D0D 100%)", padding: "calc(48px + env(safe-area-inset-top, 0px)) 24px 32px", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 70% 20%,rgba(123,47,255,.18) 0%,transparent 58%)", pointerEvents: "none" }} />
         <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 16 }}>
           <div style={{ width: 72, height: 72, borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Bebas Neue',sans-serif", fontSize: 28, letterSpacing: 1, background: "linear-gradient(135deg,#7B2FFF44,#FF2D7844)", border: "2px solid rgba(123,47,255,.5)", color: "#d4b4fe", boxShadow: "0 0 24px rgba(123,47,255,.25)" }}>{user.avatar}</div>
@@ -118,7 +118,7 @@ export function ProfileScreen({ nav, user, balance, onSignOut, onDeleteAccount }
         {/* Tabs */}
         <div style={{ display: "flex", gap: 4, marginBottom: 16 }}>
           {["history", "people"].map(t => (
-            <button key={t} onClick={() => setTab(t)} style={{ padding: "7px 16px", borderRadius: 10, cursor: "pointer", fontSize: 11, fontWeight: 800, letterSpacing: .5, textTransform: "uppercase", background: tab === t ? "rgba(123,47,255,.18)" : "transparent", border: tab === t ? "1.5px solid rgba(123,47,255,.4)" : "1.5px solid transparent", color: tab === t ? "#c4b5fd" : "#333", transition: "all .15s" }}>{t}</button>
+            <button key={t} onClick={() => setTab(t)} style={{ padding: "12px 16px", borderRadius: 10, cursor: "pointer", fontSize: 11, fontWeight: 800, letterSpacing: .5, textTransform: "uppercase", background: tab === t ? "rgba(123,47,255,.18)" : "transparent", border: tab === t ? "1.5px solid rgba(123,47,255,.4)" : "1.5px solid transparent", color: tab === t ? "#c4b5fd" : "#333", transition: "all .15s" }}>{t}</button>
           ))}
         </div>
 
@@ -189,7 +189,7 @@ export function ProfileScreen({ nav, user, balance, onSignOut, onDeleteAccount }
             <div style={{ border: "1.5px solid rgba(255,45,120,.35)", background: "rgba(255,45,120,.05)", borderRadius: 14, padding: "16px" }}>
               <div style={{ fontSize: 14, fontWeight: 800, color: "#FF2D78", marginBottom: 6 }}>delete your account?</div>
               <div style={{ fontSize: 12, color: "#888", lineHeight: 1.55, marginBottom: 12 }}>
-                your {gf(balance)} are forfeited — no refund, no cash out. your history disappears, and any events you're hosting get cancelled (your friends get their stakes back). this can't be undone.
+                your {gf(balance)} are forfeited — no refunds. your history disappears, and any events you're hosting get cancelled (your friends get their stakes back). this can't be undone.
               </div>
               {deleteError && (
                 <div style={{ fontSize: 11, color: "#FF2D78", marginBottom: 10 }}>{deleteError}</div>

@@ -142,8 +142,8 @@ export function EventScreen({ event: initialEvent, eventId, nav, userId, balance
 
   if (!event) return (
     <Shell>
-      <div style={{ background: "linear-gradient(160deg,#1a0a2e 0%,#0d0d1a 60%,#0D0D0D 100%)", padding: "44px 24px 32px" }}>
-        <button onClick={nav.pop} style={{ background: "none", border: "none", color: "#555", fontSize: 13, fontWeight: 700, cursor: "pointer", padding: 0 }}>← back</button>
+      <div style={{ background: "linear-gradient(160deg,#1a0a2e 0%,#0d0d1a 60%,#0D0D0D 100%)", padding: "calc(44px + env(safe-area-inset-top, 0px)) 24px 32px" }}>
+        <button onClick={nav.pop} style={{ background: "none", border: "none", color: "#555", fontSize: 13, fontWeight: 700, cursor: "pointer", padding: "10px", margin: "-10px 0 -10px -10px" }}>← back</button>
       </div>
       <div style={{ padding: 24 }}>
         <EmptyCard emoji="💀" headline="event not found" sub="this link might be expired or invalid" />
@@ -159,10 +159,10 @@ export function EventScreen({ event: initialEvent, eventId, nav, userId, balance
   return (
     <Shell>
       {/* Hero */}
-      <div style={{ background: "linear-gradient(160deg,#1a0a2e 0%,#0d0d1a 60%,#0D0D0D 100%)", padding: "44px 24px 32px", position: "relative" }}>
+      <div style={{ background: "linear-gradient(160deg,#1a0a2e 0%,#0d0d1a 60%,#0D0D0D 100%)", padding: "calc(44px + env(safe-area-inset-top, 0px)) 24px 32px", position: "relative" }}>
         <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 70% 20%,rgba(123,47,255,.18) 0%,transparent 60%)", pointerEvents: "none" }} />
         <div style={{ position: "relative" }}>
-          <button onClick={nav.pop} style={{ display: "block", background: "none", border: "none", color: "#555", fontSize: 13, fontWeight: 700, cursor: "pointer", marginBottom: 16, padding: 0 }}>← back</button>
+          <button onClick={nav.pop} style={{ display: "block", background: "none", border: "none", color: "#555", fontSize: 13, fontWeight: 700, cursor: "pointer", margin: "-10px 0 6px -10px", padding: "10px" }}>← back</button>
           {displayDate && (
             <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(123,47,255,.18)", border: "1px solid rgba(123,47,255,.4)", borderRadius: 20, padding: "4px 12px", fontSize: 11, fontWeight: 700, color: "#b388ff", letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 12 }}>
               <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#7B2FFF", display: "inline-block" }} />

@@ -3,7 +3,6 @@ import { Shell } from "../components/Shell";
 import { Header } from "../components/Header";
 import { FlakeShop } from "../components/FlakeShop";
 import { gf } from "../lib/currency";
-import { WELCOME_BONUS } from "../lib/flakes";
 import { createCheckout } from "../lib/wallet";
 import { isSupabaseConfigured } from "../lib/supabase";
 
@@ -56,7 +55,7 @@ export function BuyScreen({ nav, balance = 0, addFlakes, refreshBalance, checkou
       <Header eyebrow="gold flakes" title="your" outline="wallet" onBack={nav.pop} />
       <div style={{ padding: "24px 20px 80px" }}>
         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 10, marginBottom: 24 }}>
-          <button onClick={() => nav.push("howitworks")} style={{ padding: "7px 11px", borderRadius: 10, cursor: "pointer", background: "transparent", border: "1.5px solid #1e1e1e", color: "#555", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" }}>
+          <button onClick={() => nav.push("howitworks")} style={{ padding: "12px 11px", borderRadius: 10, cursor: "pointer", background: "transparent", border: "1.5px solid #1e1e1e", color: "#555", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" }}>
             ✨ how it works
           </button>
           <div style={{ width: "50%", background: "linear-gradient(135deg,rgba(245,196,81,.14),rgba(255,179,71,.04))", border: "1px solid rgba(245,196,81,.3)", borderRadius: 16, padding: "14px 16px", textAlign: "right" }}>
@@ -82,15 +81,6 @@ export function BuyScreen({ nav, balance = 0, addFlakes, refreshBalance, checkou
         )}
 
         {error && <div style={{ fontSize: 13, color: "#FF2D78", marginTop: 14, fontWeight: 600 }}>{error}</div>}
-
-        <div style={{ marginTop: 24, borderTop: "1px solid #1a1a1a", paddingTop: 24 }}>
-          <div style={{ fontSize: 13, color: "#444", marginBottom: 12, lineHeight: 1.5 }}>
-            your free {WELCOME_BONUS} welcome flakes won't be cashable.
-          </div>
-          <button disabled style={{ width: "100%", padding: "16px", borderRadius: 14, cursor: "default", background: "transparent", border: "1.5px solid #2a2a2a", color: "#555", fontSize: 14, fontWeight: 800, letterSpacing: .5, textTransform: "uppercase", opacity: .7 }}>
-            coming later
-          </button>
-        </div>
       </div>
     </Shell>
   );

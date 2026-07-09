@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="sparkleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7B2FFF"/>
+      <stop offset="100%" stop-color="#FF2D78"/>
+    </linearGradient>
+  </defs>
+
+  <!-- background, full bleed -->
+  <rect x="0" y="0" width="512" height="512" fill="#0D0D0D"/>
+
+  <!-- centered sparkle scaled to ~58% width to sit inside the ~66% maskable safe zone -->
+  <path fill="url(#sparkleGrad)" d="
+    M 406,256
+    L 277.2,234.8
+    L 256,106
+    L 234.8,234.8
+    L 106,256
+    L 234.8,277.2
+    L 256,406
+    L 277.2,277.2
+    Z"/>
+</svg>

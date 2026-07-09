@@ -1,6 +1,20 @@
 export const GLOBAL_STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Bebas+Neue&display=swap');
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    overscroll-behavior-y: none;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    -webkit-user-select: none; user-select: none;
+  }
+  input, textarea, [contenteditable] {
+    -webkit-user-select: text; user-select: text;
+  }
+  button, .cta-btn, .event-card, a {
+    touch-action: manipulation;
+  }
+  button { -webkit-tap-highlight-color: transparent; }
   @keyframes slideInRight  { from { transform:translateX(100%); opacity:0; } to { transform:translateX(0); opacity:1; } }
   @keyframes slideInLeft   { from { transform:translateX(-40%); opacity:0; } to { transform:translateX(0); opacity:1; } }
   @keyframes fadeUp        { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
@@ -33,9 +47,10 @@ export const GLOBAL_STYLES = `
   .cta-btn:hover  { transform:scale(1.02); opacity:.92; }
   .cta-btn:active { transform:scale(0.97); }
   .cta-btn.disabled { background:#1a1a1a; color:#333; cursor:not-allowed; transform:none !important; opacity:1; }
+  input, textarea, select { font-size:16px; }
   .field-input {
     width:100%; background:#111; border:1.5px solid #1e1e1e; border-radius:13px;
-    padding:14px 16px; font-size:14px; font-weight:600;
+    padding:14px 16px; font-size:16px; font-weight:600;
     color:#F2F0FF; outline:none; font-family:'Inter',sans-serif;
     transition:border-color .15s; margin-bottom:0;
   }

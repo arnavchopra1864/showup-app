@@ -10,7 +10,8 @@ export function BottomNav({ active, onHome, onCreate, onProfile }) {
       width: "100%", maxWidth: 420,
       background: "rgba(13,13,13,.95)", backdropFilter: "blur(16px)",
       borderTop: "1px solid #1a1a1a",
-      display: "flex", alignItems: "center", padding: "12px 0 26px", zIndex: 100,
+      display: "flex", alignItems: "center",
+      padding: "12px 0 calc(20px + env(safe-area-inset-bottom, 0px))", zIndex: 100,
     }}>
       <div onClick={onHome} style={navItem}>
         <div style={{ fontSize: 20 }}>🏠</div>

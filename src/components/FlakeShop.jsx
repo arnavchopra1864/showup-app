@@ -33,7 +33,7 @@ export function FlakeShop({ onPurchase, ctaLabel = "add gold flakes", onSkip, sk
       </button>
 
       {onSkip && (
-        <button onClick={onSkip} style={{ width: "100%", background: "none", border: "none", color: "#555", fontSize: 13, fontWeight: 700, cursor: "pointer", marginTop: 14, padding: 0 }}>
+        <button onClick={onSkip} style={{ width: "100%", background: "none", border: "none", color: "#555", fontSize: 13, fontWeight: 700, cursor: "pointer", marginTop: 6, padding: "12px 0" }}>
           {skipLabel ?? "maybe later"}
         </button>
       )}

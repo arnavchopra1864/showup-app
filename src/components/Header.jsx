@@ -2,7 +2,8 @@ export function Header({ eyebrow, title, outline, sub, onBack }) {
   return (
     <div style={{
       background: "linear-gradient(160deg,#1a0a2e 0%,#0d0d1a 55%,#0D0D0D 100%)",
-      padding: "44px 24px 28px", position: "relative", overflow: "hidden",
+      padding: "calc(44px + env(safe-area-inset-top, 0px)) 24px 28px",
+      position: "relative", overflow: "hidden",
     }}>
       <div style={{
         position: "absolute", inset: 0,
@@ -14,7 +15,8 @@ export function Header({ eyebrow, title, outline, sub, onBack }) {
           <button onClick={onBack} style={{
             background: "none", border: "none", color: "#555",
             fontSize: 13, fontWeight: 700, cursor: "pointer",
-            marginBottom: 12, padding: 0, display: "flex", alignItems: "center", gap: 6,
+            margin: "-10px 0 2px -10px", padding: "10px",
+            display: "flex", alignItems: "center", gap: 6,
           }}>
             ← back
           </button>

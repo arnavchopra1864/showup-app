@@ -55,8 +55,8 @@ export function PayoutScreen({ event: initialEvent, eventId, nav, userId, refres
 
   if (!event) return (
     <Shell>
-      <div style={{ padding: "44px 24px 28px" }}>
-        <button onClick={nav.pop} style={{ background: "none", border: "none", color: "#555", fontSize: 13, fontWeight: 700, cursor: "pointer", padding: 0 }}>← back</button>
+      <div style={{ padding: "calc(44px + env(safe-area-inset-top, 0px)) 24px 28px" }}>
+        <button onClick={nav.pop} style={{ background: "none", border: "none", color: "#555", fontSize: 13, fontWeight: 700, cursor: "pointer", padding: "10px", margin: "-10px 0 -10px -10px" }}>← back</button>
       </div>
       <div style={{ padding: 24 }}><EmptyCard emoji="💀" headline="no payout data" sub="something went wrong" /></div>
     </Shell>
@@ -77,7 +77,7 @@ export function PayoutScreen({ event: initialEvent, eventId, nav, userId, refres
     <Shell>
       {!fullyDone && <div onClick={handleTap} style={{ position: "fixed", inset: 0, zIndex: 10, cursor: "pointer" }} />}
 
-      <div style={{ background: "linear-gradient(160deg,#1a0a2e 0%,#0d0d1a 55%,#0D0D0D 100%)", padding: "44px 24px 28px", position: "relative", overflow: "hidden" }}>
+      <div style={{ background: "linear-gradient(160deg,#1a0a2e 0%,#0d0d1a 55%,#0D0D0D 100%)", padding: "calc(44px + env(safe-area-inset-top, 0px)) 24px 28px", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 70% 20%,rgba(255,45,120,.12) 0%,transparent 58%)", pointerEvents: "none" }} />
         <div style={{ position: "relative" }}>
           {stage === 0 ? (
@@ -192,7 +192,7 @@ export function PayoutScreen({ event: initialEvent, eventId, nav, userId, refres
           <div className="fade-up" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <button className="cta-btn">share your results 📣</button>
             <button className="cta-btn" style={{ background: "#111", color: "#888", border: "1.5px solid #1e1e1e" }} onClick={() => nav.push("create")}>run it back 🔁</button>
-            <button style={{ background: "none", border: "none", color: "#444", fontSize: 13, fontWeight: 700, cursor: "pointer", marginTop: 4 }} onClick={() => nav.resetTo("home")}>back to home</button>
+            <button style={{ background: "none", border: "none", color: "#444", fontSize: 13, fontWeight: 700, cursor: "pointer", padding: "12px 0", marginTop: -8 }} onClick={() => nav.resetTo("home")}>back to home</button>
           </div>
         )}
 
